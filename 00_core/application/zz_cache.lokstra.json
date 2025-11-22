@@ -1,0 +1,60 @@
+{
+  "version": 1,
+  "files": {
+    "app_key_service.go": {
+      "filename": "app_key_service.go",
+      "checksum": "139def9ff84a92660df6e8446e19a1d13f58de23af7ac872c056f24bc3de8c37",
+      "annotations": 9,
+      "last_scan": "2025-11-20T02:30:00.73649+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ]
+    },
+    "app_service.go": {
+      "filename": "app_service.go",
+      "checksum": "984f9af00c239d50d2b1969d07a648c967878b96e03337bca6ed27c6194cc840",
+      "annotations": 12,
+      "last_scan": "2025-11-20T02:30:00.73649+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ]
+    },
+    "branch_service.go": {
+      "filename": "branch_service.go",
+      "checksum": "0d7998d583be4023a4eace74a2172526d6c00b436191b5e15b5b35174da87a23",
+      "annotations": 10,
+      "last_scan": "2025-11-20T02:30:00.73649+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ]
+    },
+    "credential_config_service.go": {
+      "filename": "credential_config_service.go",
+      "checksum": "bf4133f69149e0e3fea046d4eb3a4f1097e44c9364db1c1596628dde19877bf9",
+      "annotations": 7,
+      "last_scan": "2025-11-20T02:30:00.73649+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ]
+    },
+    "tenant_service.go": {
+      "filename": "tenant_service.go",
+      "checksum": "f5b6bfec17524c1ec36e32f973258664a6cce5db3a5306963f562973bde69d13",
+      "annotations": 9,
+      "last_scan": "2025-11-20T02:30:00.73649+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ]
+    },
+    "user_service.go": {
+      "filename": "user_service.go",
+      "checksum": "f2125575b0091f34f2dd81a61e89e387e34139e254c0c51f6ff11d1d8579e672",
+      "annotations": 17,
+      "last_scan": "2025-11-20T02:30:00.73649+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ]
+    }
+  },
+  "updated_at": "2025-11-20T02:54:10.2626643+07:00"
+}

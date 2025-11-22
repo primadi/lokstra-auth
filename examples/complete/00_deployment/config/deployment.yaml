@@ -1,0 +1,113 @@
+# yaml-language-server: $schema=https://primadi.github.io/lokstra/schema/lokstra.schema.json
+
+configs:
+  # Global Database configuration
+  global-db:
+    dsn: "postgres://user:password@localhost:5432/lokstra_db"
+    schema: "public"
+
+service-definitions:
+  global-db:
+    type: "global-db"
+    config:
+      dsn: ${GLOBAL_DB_DSN}
+      schema: ${GLOBAL_DB_SCHEMA}
+ 
+# Deployment modes
+deployments:
+  # Monolith: All services run in one server
+  monolith:
+    servers:
+      auth-server:
+        base-url: "http://localhost"
+        addr: ":8080"
+        published-services:
+          # 00_core - Registration & Tenant Management
+          - tenant-service
+          - app-service
+          - branch-service
+          - user-service
+          - app-key-service
+          - credential-config-service
+          
+          # 01_credential - Authentication
+          - basic-auth-service
+          - apikey-auth-service
+          - oauth2-auth-service
+          - passwordless-auth-service
+          - passkey-auth-service
+          
+          # 02_token - Token Management (future)
+          # - token-service
+          
+          # 03_subject - Subject Resolution (future)
+          # - subject-service
+          
+          # 04_authz - Authorization (future)
+          # - authz-service
+
+  # Microservices: Separate servers per layer
+  microservices:
+    servers:
+      # Core services (tenant, app, user management)
+      core-server:
+        base-url: "http://localhost"
+        addr: ":8081"
+        published-services:
+          - tenant-service
+          - app-service
+          - branch-service
+          - user-service
+          - app-key-service
+          - credential-config-service
+      
+      # Credential services (authentication)
+      credential-server:
+        base-url: "http://localhost"
+        addr: ":8082"
+        published-services:
+          - basic-auth-service
+          - apikey-auth-service
+          - oauth2-auth-service
+          - passwordless-auth-service
+          - passkey-auth-service
+      
+      # Token services (future)
+      # token-server:
+      #   base-url: "http://localhost"
+      #   addr: ":8083"
+      #   published-services:
+      #     - token-service
+      
+      # Subject services (future)
+      # subject-server:
+      #   base-url: "http://localhost"
+      #   addr: ":8084"
+      #   published-services:
+      #     - subject-service
+      
+      # Authorization services (future)
+      # authz-server:
+      #   base-url: "http://localhost"
+      #   addr: ":8085"
+      #   published-services:
+      #     - authz-service
+
+  # Development: Monolith with debug settings
+  development:
+    servers:
+      dev-server:
+        base-url: "http://localhost"
+        addr: ":3000"
+        published-services:
+          - tenant-service
+          - app-service
+          - branch-service
+          - user-service
+          - app-key-service
+          - credential-config-service
+          - basic-auth-service
+          - apikey-auth-service
+          - oauth2-auth-service
+          - passwordless-auth-service
+          - passkey-auth-service

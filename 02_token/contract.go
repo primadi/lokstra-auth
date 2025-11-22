@@ -13,6 +13,15 @@ type Token struct {
 	// Type is the token type (e.g., "Bearer", "JWT")
 	Type string
 
+	// TenantID is the tenant this token belongs to (REQUIRED for multi-tenant)
+	TenantID string
+
+	// AppID is the app this token was issued for (REQUIRED for multi-tenant)
+	AppID string
+
+	// BranchID is the branch this token is scoped to (optional)
+	BranchID string
+
 	// ExpiresAt indicates when the token expires
 	ExpiresAt time.Time
 
@@ -88,6 +97,26 @@ func (c Claims) GetStringSlice(key string) ([]string, bool) {
 	}
 }
 
+// GetTenantID retrieves the tenant ID from claims
+func (c Claims) GetTenantID() (string, bool) {
+	return c.GetString("tenant_id")
+}
+
+// GetAppID retrieves the app ID from claims
+func (c Claims) GetAppID() (string, bool) {
+	return c.GetString("app_id")
+}
+
+// GetBranchID retrieves the branch ID from claims
+func (c Claims) GetBranchID() (string, bool) {
+	return c.GetString("branch_id")
+}
+
+// GetSubject retrieves the subject (user ID) from claims
+func (c Claims) GetSubject() (string, bool) {
+	return c.GetString("sub")
+}
+
 // VerificationResult represents the result of token verification
 type VerificationResult struct {
 	// Valid indicates whether the token is valid
@@ -145,25 +174,31 @@ type RefreshTokenHandler interface {
 	Revoke(ctx context.Context, refreshToken string) error
 }
 
-// TokenStore stores and retrieves tokens
+// TokenStore stores and retrieves tokens with tenant isolation
 type TokenStore interface {
-	// Store saves a token
-	Store(ctx context.Context, subject string, token *Token) error
+	// Store saves a token for a subject within a tenant
+	Store(ctx context.Context, tenantID, subject string, token *Token) error
 
 	// Get retrieves a token
-	Get(ctx context.Context, subject string, tokenID string) (*Token, error)
+	Get(ctx context.Context, tenantID, subject string, tokenID string) (*Token, error)
 
 	// Delete removes a token
-	Delete(ctx context.Context, subject string, tokenID string) error
+	Delete(ctx context.Context, tenantID, subject string, tokenID string) error
 
-	// List returns all tokens for a subject
-	List(ctx context.Context, subject string) ([]*Token, error)
+	// List returns all tokens for a subject within a tenant
+	List(ctx context.Context, tenantID, subject string) ([]*Token, error)
 
 	// Revoke invalidates a token
-	Revoke(ctx context.Context, tokenID string) error
+	Revoke(ctx context.Context, tenantID, tokenID string) error
 
 	// IsRevoked checks if a token is revoked
-	IsRevoked(ctx context.Context, tokenID string) (bool, error)
+	IsRevoked(ctx context.Context, tenantID, tokenID string) (bool, error)
+
+	// RevokeAllAppTokens revokes all tokens for an app
+	RevokeAllAppTokens(ctx context.Context, tenantID, appID string) error
+
+	// RevokeAllUserTokens revokes all tokens for a user across all apps in a tenant
+	RevokeAllUserTokens(ctx context.Context, tenantID, userID string) error
 }
 
 // TokenRevocationList manages revoked tokens

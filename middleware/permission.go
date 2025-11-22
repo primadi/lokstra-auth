@@ -74,7 +74,7 @@ func RequirePermission(auth *lokstraauth.Auth, permission string) func(c *reques
 // DefaultForbiddenHandler returns 403 Forbidden
 func DefaultForbiddenHandler(c *request.Context, err error) error {
 	c.Resp.WithStatus(403)
-	return c.Resp.Json(map[string]interface{}{
+	return c.Resp.Json(map[string]any{
 		"error":   "Forbidden",
 		"message": err.Error(),
 	})

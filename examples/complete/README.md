@@ -6,7 +6,55 @@ This directory contains complete, real-world examples demonstrating how to use a
 
 These examples show the full authentication and authorization flow, from credential validation through token management, subject resolution, to final authorization decisions.
 
+## Quick Start Guide
+
+**Start here if you're new to Lokstra:**
+
+1. **[Deployment](./00_deployment/)** - ⭐ How to run the framework - START HERE
+
+This is currently the main example demonstrating:
+- `lokstra.Bootstrap()` auto-registration
+- `@RouterService` annotation pattern
+- Deployment modes (monolith/microservices/development)
+- Configuration with deployment.yaml
+
+> **Note**: Additional complete examples are being redesigned for the annotation-based architecture.  
+> The framework now uses automatic service registration instead of manual instantiation.
+
 ## Examples
+
+### 0. [Deployment](./00_deployment/) - Framework Deployment Modes
+
+**Demonstrates:**
+- Bootstrap process with auto-registration
+- Monolith deployment (single server, port 8080)
+- Microservices deployment (5 separate services)
+- Development mode (debug, port 3000)
+- Configuration management with deployment.yaml
+
+**Use Case:** Understanding how to deploy and run Lokstra framework
+
+**Run:**
+```bash
+cd 00_deployment
+
+# Monolith mode (default)
+go run main.go
+
+# Microservices mode
+SERVER=microservices go run main.go
+
+# Development mode
+SERVER=development go run main.go
+```
+
+**What you'll learn:**
+1. How Bootstrap() generates service registry
+2. How to configure deployment modes
+3. How to run services in different architectures
+4. How to use environment variables for configuration
+
+---
 
 ### 1. [Basic Flow](./01_basic_flow/) - Complete 4-Layer Authentication & Authorization
 

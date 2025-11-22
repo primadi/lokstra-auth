@@ -26,6 +26,15 @@ type Resource struct {
 	// ID is the resource identifier
 	ID string
 
+	// TenantID is the tenant this resource belongs to (for multi-tenant isolation)
+	TenantID string
+
+	// AppID is the app this resource belongs to (for app-level isolation)
+	AppID string
+
+	// BranchID is the branch this resource belongs to (optional, for branch-scoped resources)
+	BranchID string
+
 	// Attributes contains resource attributes for ABAC
 	Attributes map[string]any
 }
@@ -90,25 +99,31 @@ type RoleChecker interface {
 	HasAllRoles(ctx context.Context, identity *subject.IdentityContext, roles ...string) (bool, error)
 }
 
-// AccessControlList manages ACLs for resources
+// AccessControlList manages ACLs for resources (tenant-scoped)
 type AccessControlList interface {
-	// Grant grants access to a resource
-	Grant(ctx context.Context, subjectID string, resource *Resource, action Action) error
+	// Grant grants access to a resource (scoped to tenant+app)
+	Grant(ctx context.Context, tenantID, appID, subjectID string, resource *Resource, action Action) error
 
-	// Revoke revokes access to a resource
-	Revoke(ctx context.Context, subjectID string, resource *Resource, action Action) error
+	// Revoke revokes access to a resource (scoped to tenant+app)
+	Revoke(ctx context.Context, tenantID, appID, subjectID string, resource *Resource, action Action) error
 
-	// Check checks if a subject has access to a resource
-	Check(ctx context.Context, subjectID string, resource *Resource, action Action) (bool, error)
+	// Check checks if a subject has access to a resource (scoped to tenant+app)
+	Check(ctx context.Context, tenantID, appID, subjectID string, resource *Resource, action Action) (bool, error)
 
-	// List lists all permissions for a subject on a resource
-	List(ctx context.Context, subjectID string, resource *Resource) ([]Action, error)
+	// List lists all permissions for a subject on a resource (scoped to tenant+app)
+	List(ctx context.Context, tenantID, appID, subjectID string, resource *Resource) ([]Action, error)
 }
 
-// Policy represents an authorization policy
+// Policy represents an authorization policy (tenant and app scoped)
 type Policy struct {
 	// ID is the policy identifier
 	ID string
+
+	// TenantID is the tenant this policy belongs to (required for isolation)
+	TenantID string
+
+	// AppID is the app this policy belongs to (optional, if nil applies to all apps in tenant)
+	AppID string
 
 	// Name is the policy name
 	Name string
@@ -132,28 +147,31 @@ type Policy struct {
 	Conditions map[string]any
 }
 
-// PolicyStore stores and retrieves policies
+// PolicyStore stores and retrieves policies (tenant-scoped)
 type PolicyStore interface {
-	// Create creates a new policy
+	// Create creates a new policy (must include tenantID)
 	Create(ctx context.Context, policy *Policy) error
 
-	// Get retrieves a policy by ID
-	Get(ctx context.Context, policyID string) (*Policy, error)
+	// Get retrieves a policy by ID (scoped to tenant)
+	Get(ctx context.Context, tenantID, policyID string) (*Policy, error)
 
-	// Update updates an existing policy
+	// Update updates an existing policy (scoped to tenant)
 	Update(ctx context.Context, policy *Policy) error
 
-	// Delete deletes a policy
-	Delete(ctx context.Context, policyID string) error
+	// Delete deletes a policy (scoped to tenant)
+	Delete(ctx context.Context, tenantID, policyID string) error
 
-	// List lists all policies
-	List(ctx context.Context) ([]*Policy, error)
+	// List lists all policies for a tenant
+	List(ctx context.Context, tenantID string) ([]*Policy, error)
 
-	// FindBySubject finds policies for a subject
-	FindBySubject(ctx context.Context, subjectID string) ([]*Policy, error)
+	// ListByApp lists all policies for a specific app within a tenant
+	ListByApp(ctx context.Context, tenantID, appID string) ([]*Policy, error)
 
-	// FindByResource finds policies for a resource
-	FindByResource(ctx context.Context, resourceType string, resourceID string) ([]*Policy, error)
+	// FindBySubject finds policies for a subject within a tenant+app
+	FindBySubject(ctx context.Context, tenantID, appID, subjectID string) ([]*Policy, error)
+
+	// FindByResource finds policies for a resource within a tenant+app
+	FindByResource(ctx context.Context, tenantID, appID, resourceType, resourceID string) ([]*Policy, error)
 }
 
 // Authorizer combines multiple authorization checks
@@ -163,10 +181,10 @@ type Authorizer interface {
 	RoleChecker
 }
 
-// AttributeProvider provides attributes for ABAC
+// AttributeProvider provides attributes for ABAC (tenant-scoped)
 type AttributeProvider interface {
-	// GetSubjectAttributes retrieves attributes for a subject
-	GetSubjectAttributes(ctx context.Context, subjectID string) (map[string]any, error)
+	// GetSubjectAttributes retrieves attributes for a subject within a tenant
+	GetSubjectAttributes(ctx context.Context, tenantID, subjectID string) (map[string]any, error)
 
 	// GetResourceAttributes retrieves attributes for a resource
 	GetResourceAttributes(ctx context.Context, resource *Resource) (map[string]any, error)

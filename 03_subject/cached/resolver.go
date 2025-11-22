@@ -34,14 +34,22 @@ func NewResolver(baseResolver subject.SubjectResolver, cache subject.IdentityCac
 
 // Resolve creates a Subject from claims with caching
 func (r *Resolver) Resolve(ctx context.Context, claims map[string]any) (*subject.Subject, error) {
-	// Generate cache key from subject ID
+	// Generate cache key from subject ID + tenant ID for proper isolation
 	subID, ok := claims["sub"].(string)
 	if !ok || subID == "" {
 		// Can't cache without subject ID, resolve directly
 		return r.baseResolver.Resolve(ctx, claims)
 	}
 
-	cacheKey := fmt.Sprintf("subject:%s", subID)
+	// Extract tenant_id for cache key scoping
+	tenantID, ok := claims["tenant_id"].(string)
+	if !ok || tenantID == "" {
+		// Can't cache without tenant ID, resolve directly
+		return r.baseResolver.Resolve(ctx, claims)
+	}
+
+	// Use composite cache key for tenant isolation
+	cacheKey := fmt.Sprintf("subject:%s:%s", tenantID, subID)
 
 	// Try to get from cache
 	if cached, err := r.cache.Get(ctx, cacheKey); err == nil && cached != nil && cached.Subject != nil {
@@ -56,7 +64,8 @@ func (r *Resolver) Resolve(ctx context.Context, claims map[string]any) (*subject
 
 	// Cache the result
 	identity := &subject.IdentityContext{
-		Subject: sub,
+		Subject:  sub,
+		TenantID: tenantID,
 	}
 	_ = r.cache.Set(ctx, cacheKey, identity, int64(r.ttl.Seconds()))
 
@@ -88,7 +97,15 @@ func NewContextBuilder(baseBuilder subject.IdentityContextBuilder, cache subject
 
 // Build creates an IdentityContext with caching
 func (b *ContextBuilder) Build(ctx context.Context, sub *subject.Subject) (*subject.IdentityContext, error) {
-	cacheKey := fmt.Sprintf("identity:%s", sub.ID)
+	// Extract app_id from subject attributes for cache key scoping
+	appID, ok := sub.Attributes["app_id"].(string)
+	if !ok || appID == "" {
+		// Can't cache without app ID, build directly
+		return b.baseBuilder.Build(ctx, sub)
+	}
+
+	// Use composite cache key for tenant+app isolation
+	cacheKey := fmt.Sprintf("identity:%s:%s:%s", sub.TenantID, appID, sub.ID)
 
 	// Try to get from cache
 	if cached, err := b.cache.Get(ctx, cacheKey); err == nil && cached != nil {
@@ -108,8 +125,9 @@ func (b *ContextBuilder) Build(ctx context.Context, sub *subject.Subject) (*subj
 }
 
 // Invalidate invalidates cached identity for a subject
-func (b *ContextBuilder) Invalidate(ctx context.Context, subjectID string) error {
-	cacheKey := fmt.Sprintf("identity:%s", subjectID)
+func (b *ContextBuilder) Invalidate(ctx context.Context, tenantID, appID, subjectID string) error {
+	// Use composite cache key matching Build() method
+	cacheKey := fmt.Sprintf("identity:%s:%s:%s", tenantID, appID, subjectID)
 	return b.cache.Delete(ctx, cacheKey)
 }
 

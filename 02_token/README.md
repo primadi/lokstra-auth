@@ -1,11 +1,11 @@
 # Layer 02: Token Management
 
-Layer 02 Token Management menyediakan implementasi lengkap untuk token generation, verification, storage, dan lifecycle management dalam sistem autentikasi. Layer ini mendukung berbagai jenis token termasuk JWT (JSON Web Token) dan opaque tokens.
+Layer 02 Token Management provides complete implementation for token generation, verification, storage, and lifecycle management in authentication systems. This layer supports various types of tokens including JWT (JSON Web Token) and opaque tokens.
 
-## 📋 Daftar Isi
+## 📋 Table of Contents
 
-- [Konsep](#konsep)
-- [Arsitektur](#arsitektur)
+- [Concepts](#concepts)
+- [Architecture](#architecture)
 - [Token Managers](#token-managers)
   - [JWT Manager](#jwt-manager)
   - [Simple Token Manager](#simple-token-manager)
@@ -16,34 +16,34 @@ Layer 02 Token Management menyediakan implementasi lengkap untuk token generatio
 
 ---
 
-## Konsep
+## Concepts
 
-### Apa itu Token?
+### What is a Token?
 
-Token adalah kredensial yang digunakan untuk mengakses resource tanpa perlu mengirim username dan password setiap kali. Token memiliki karakteristik:
+A token is a credential used to access resources without needing to send username and password every time. Tokens have these characteristics:
 
-- **Stateless**: Tidak memerlukan session storage di server (untuk JWT)
-- **Self-contained**: Membawa informasi (claims) di dalamnya
-- **Expirable**: Memiliki masa berlaku
-- **Revocable**: Dapat dibatalkan sebelum expired
+- **Stateless**: No session storage required on server (for JWT)
+- **Self-contained**: Carries information (claims) within it
+- **Expirable**: Has a validity period
+- **Revocable**: Can be cancelled before expiry
 
-### Jenis Token
+### Token Types
 
 **1. JWT (JSON Web Token)**
-- Self-contained dengan claims
-- Signed untuk validasi
-- Dapat diverifikasi tanpa database lookup
-- Support untuk refresh tokens
+- Self-contained with claims
+- Signed for validation
+- Can be verified without database lookup
+- Support for refresh tokens
 
 **2. Opaque Token**
-- Random string tanpa informasi
-- Memerlukan database lookup untuk verifikasi
-- Lebih aman untuk sensitive data
-- Mudah untuk revoke
+- Random string without information
+- Requires database lookup for verification
+- More secure for sensitive data
+- Easy to revoke
 
 ---
 
-## Arsitektur
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -106,7 +106,7 @@ type RevocationList interface {
 
 ### JWT Manager
 
-JWT Manager mengimplementasikan token management menggunakan JSON Web Tokens (RFC 7519).
+JWT Manager implements token management using JSON Web Tokens (RFC 7519).
 
 #### Features
 
@@ -121,10 +121,10 @@ JWT Manager mengimplementasikan token management menggunakan JSON Web Tokens (RF
 
 ```go
 type JWTConfig struct {
-    SigningKey        []byte        // Secret key untuk signing
+    SigningKey        []byte        // Secret key for signing
     SigningMethod     string        // "HS256", "HS384", "HS512"
-    AccessDuration    time.Duration // Durasi access token
-    RefreshDuration   time.Duration // Durasi refresh token
+    AccessDuration    time.Duration // Access token duration
+    RefreshDuration   time.Duration // Refresh token duration
     Issuer           string        // Token issuer
     Audience         []string      // Token audience
     EnableRevocation bool          // Enable revocation list
@@ -211,7 +211,7 @@ _, err = manager.Verify(ctx, tokenValue)
 #### Claims Helpers
 
 ```go
-// Helper methods untuk extract claims
+// Helper methods to extract claims
 email := token.GetStringClaim("email")
 age := token.GetInt64Claim("age")
 isAdmin := token.GetBoolClaim("is_admin")
@@ -220,7 +220,7 @@ roles := token.GetStringSliceClaim("roles")
 
 ### Simple Token Manager
 
-Simple Token Manager menggunakan cryptographically secure random tokens (opaque tokens).
+Simple Token Manager uses cryptographically secure random tokens (opaque tokens).
 
 #### Features
 
@@ -313,7 +313,7 @@ _, err = manager.Verify(ctx, tokenValue)
 
 ## Token Store
 
-Token Store menyediakan persistent storage untuk token lifecycle management.
+Token Store provides persistent storage for token lifecycle management.
 
 ### Features
 
@@ -551,10 +551,10 @@ store.Revoke(ctx, "user1-mobile")
 
 ## Examples
 
-Lihat folder `examples/02_token/` untuk contoh lengkap:
+See `examples/02_token/` folder for complete examples:
 
 ### 01_jwt - JWT Token Management
-Demonstrasi lengkap JWT token features:
+Complete demonstration of JWT token features:
 - Generate access tokens
 - Generate refresh tokens
 - Verify tokens
@@ -569,7 +569,7 @@ go run main.go
 ```
 
 ### 02_simple - Simple Opaque Tokens
-Demonstrasi opaque token management:
+Demonstration of opaque token management:
 - Generate secure random tokens
 - Multiple tokens per user
 - Token verification
@@ -582,7 +582,7 @@ go run main.go
 ```
 
 ### 03_store - Token Store Management
-Demonstrasi token lifecycle management:
+Demonstration of token lifecycle management:
 - Store tokens for multiple users
 - Multi-device support
 - List user tokens

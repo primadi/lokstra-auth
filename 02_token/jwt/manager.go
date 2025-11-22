@@ -88,12 +88,25 @@ func (m *Manager) Generate(ctx context.Context, claims token.Claims) (*token.Tok
 	now := time.Now()
 	expiresAt := now.Add(m.config.AccessTokenDuration)
 
+	// Validate required multi-tenant claims
+	tenantID, hasTenant := claims.GetTenantID()
+	if !hasTenant || tenantID == "" {
+		return nil, errors.New("tenant_id is required in claims")
+	}
+
+	appID, hasApp := claims.GetAppID()
+	if !hasApp || appID == "" {
+		return nil, errors.New("app_id is required in claims")
+	}
+
 	// Build JWT claims
 	jwtClaims := jwt.MapClaims{
-		"iat": now.Unix(),
-		"exp": expiresAt.Unix(),
-		"iss": m.config.Issuer,
-		"aud": m.config.Audience,
+		"iat":       now.Unix(),
+		"exp":       expiresAt.Unix(),
+		"iss":       m.config.Issuer,
+		"aud":       m.config.Audience,
+		"tenant_id": tenantID,
+		"app_id":    appID,
 	}
 
 	// Add custom claims
@@ -113,6 +126,8 @@ func (m *Manager) Generate(ctx context.Context, claims token.Claims) (*token.Tok
 	return &token.Token{
 		Value:     tokenString,
 		Type:      "Bearer",
+		TenantID:  tenantID,
+		AppID:     appID,
 		ExpiresAt: expiresAt,
 		IssuedAt:  now,
 		Metadata: map[string]any{
@@ -196,11 +211,30 @@ func (m *Manager) Verify(ctx context.Context, tokenValue string) (*token.Verific
 		claims[k] = v
 	}
 
+	// Validate multi-tenant required claims
+	tenantID, hasTenant := claims.GetTenantID()
+	if !hasTenant || tenantID == "" {
+		return &token.VerificationResult{
+			Valid: false,
+			Error: errors.New("token missing tenant_id claim"),
+		}, nil
+	}
+
+	appID, hasApp := claims.GetAppID()
+	if !hasApp || appID == "" {
+		return &token.VerificationResult{
+			Valid: false,
+			Error: errors.New("token missing app_id claim"),
+		}, nil
+	}
+
 	return &token.VerificationResult{
 		Valid:  true,
 		Claims: claims,
 		Metadata: map[string]any{
 			"algorithm": jwtToken.Method.Alg(),
+			"tenant_id": tenantID,
+			"app_id":    appID,
 		},
 	}, nil
 }
@@ -215,13 +249,26 @@ func (m *Manager) GenerateRefreshToken(ctx context.Context, claims token.Claims)
 	now := time.Now()
 	expiresAt := now.Add(m.config.RefreshTokenDuration)
 
+	// Validate required multi-tenant claims
+	tenantID, hasTenant := claims.GetTenantID()
+	if !hasTenant || tenantID == "" {
+		return nil, errors.New("tenant_id is required in claims")
+	}
+
+	appID, hasApp := claims.GetAppID()
+	if !hasApp || appID == "" {
+		return nil, errors.New("app_id is required in claims")
+	}
+
 	// Build JWT claims for refresh token
 	jwtClaims := jwt.MapClaims{
-		"iat":  now.Unix(),
-		"exp":  expiresAt.Unix(),
-		"iss":  m.config.Issuer,
-		"aud":  m.config.Audience,
-		"type": "refresh",
+		"iat":       now.Unix(),
+		"exp":       expiresAt.Unix(),
+		"iss":       m.config.Issuer,
+		"aud":       m.config.Audience,
+		"type":      "refresh",
+		"tenant_id": tenantID,
+		"app_id":    appID,
 	}
 
 	// Add limited custom claims (typically just subject)
@@ -241,6 +288,8 @@ func (m *Manager) GenerateRefreshToken(ctx context.Context, claims token.Claims)
 	return &token.Token{
 		Value:     tokenString,
 		Type:      "Bearer",
+		TenantID:  tenantID,
+		AppID:     appID,
 		ExpiresAt: expiresAt,
 		IssuedAt:  now,
 		Metadata: map[string]any{

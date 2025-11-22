@@ -1,7 +1,7 @@
 package lokstraauth
 
 import (
-	credential "github.com/primadi/lokstra-auth/01_credential"
+	credential "github.com/primadi/lokstra-auth/01_credential/domain"
 	token "github.com/primadi/lokstra-auth/02_token"
 	subject "github.com/primadi/lokstra-auth/03_subject"
 	authz "github.com/primadi/lokstra-auth/04_authz"
@@ -86,9 +86,9 @@ func (b *Builder) SetDefaultAuthenticator(authType string) *Builder {
 }
 
 // AddMetadata adds metadata to the configuration
-func (b *Builder) AddMetadata(key string, value interface{}) *Builder {
+func (b *Builder) AddMetadata(key string, value any) *Builder {
 	if b.auth.config.Metadata == nil {
-		b.auth.config.Metadata = make(map[string]interface{})
+		b.auth.config.Metadata = make(map[string]any)
 	}
 	b.auth.config.Metadata[key] = value
 	return b

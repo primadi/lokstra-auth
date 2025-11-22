@@ -17,9 +17,11 @@ type ACLEntry struct {
 	Permissions []string // List of allowed permissions
 }
 
-// Manager manages access control lists for resources
+// Manager manages access control lists for resources (multi-tenant aware)
 type Manager struct {
-	acls map[string][]*ACLEntry // resourceKey -> ACL entries
+	// acls: map[tenantID:appID:resourceType:resourceID] -> ACL entries
+	// Composite key ensures tenant+app isolation
+	acls map[string][]*ACLEntry
 	mu   sync.RWMutex
 }
 
@@ -30,12 +32,46 @@ func NewManager() *Manager {
 	}
 }
 
-// Grant grants permissions to a subject for a resource
-func (m *Manager) Grant(ctx context.Context, resourceType, resourceID, subjectID, subjectType string, permissions ...string) error {
+// resourceKey creates a unique key for a resource (with tenant+app scoping)
+func (m *Manager) resourceKey(tenantID, appID, resourceType, resourceID string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", tenantID, appID, strings.ToLower(resourceType), resourceID)
+}
+
+// Grant grants access to a resource (implements AccessControlList interface)
+func (m *Manager) Grant(ctx context.Context, tenantID, appID, subjectID string, resource *authz.Resource, action authz.Action) error {
+	return m.grantPermissions(ctx, tenantID, appID, resource.Type, resource.ID, subjectID, "user", string(action))
+}
+
+// Revoke revokes access to a resource (implements AccessControlList interface)
+func (m *Manager) Revoke(ctx context.Context, tenantID, appID, subjectID string, resource *authz.Resource, action authz.Action) error {
+	return m.revokePermissions(ctx, tenantID, appID, resource.Type, resource.ID, subjectID, "user", string(action))
+}
+
+// Check checks if a subject has access to a resource (implements AccessControlList interface)
+func (m *Manager) Check(ctx context.Context, tenantID, appID, subjectID string, resource *authz.Resource, action authz.Action) (bool, error) {
+	return m.checkPermission(ctx, tenantID, appID, resource.Type, resource.ID, subjectID, string(action), nil)
+}
+
+// List lists all permissions for a subject on a resource (implements AccessControlList interface)
+func (m *Manager) List(ctx context.Context, tenantID, appID, subjectID string, resource *authz.Resource) ([]authz.Action, error) {
+	permissions, err := m.GetPermissions(ctx, tenantID, appID, resource.Type, resource.ID, subjectID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	actions := make([]authz.Action, 0, len(permissions))
+	for _, perm := range permissions {
+		actions = append(actions, authz.Action(perm))
+	}
+	return actions, nil
+}
+
+// grantPermissions grants permissions to a subject for a resource (internal method)
+func (m *Manager) grantPermissions(_ context.Context, tenantID, appID, resourceType, resourceID, subjectID, subjectType string, permissions ...string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	key := m.resourceKey(resourceType, resourceID)
+	key := m.resourceKey(tenantID, appID, resourceType, resourceID)
 
 	// Find or create ACL entry
 	var entry *ACLEntry
@@ -65,12 +101,12 @@ func (m *Manager) Grant(ctx context.Context, resourceType, resourceID, subjectID
 	return nil
 }
 
-// Revoke removes permissions from a subject for a resource
-func (m *Manager) Revoke(ctx context.Context, resourceType, resourceID, subjectID, subjectType string, permissions ...string) error {
+// revokePermissions removes permissions from a subject for a resource (internal method)
+func (m *Manager) revokePermissions(_ context.Context, tenantID, appID, resourceType, resourceID, subjectID, subjectType string, permissions ...string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	key := m.resourceKey(resourceType, resourceID)
+	key := m.resourceKey(tenantID, appID, resourceType, resourceID)
 
 	// Find ACL entry
 	for _, entry := range m.acls[key] {
@@ -91,11 +127,11 @@ func (m *Manager) Revoke(ctx context.Context, resourceType, resourceID, subjectI
 }
 
 // RevokeAll removes all permissions from a subject for a resource
-func (m *Manager) RevokeAll(ctx context.Context, resourceType, resourceID, subjectID, subjectType string) error {
+func (m *Manager) RevokeAll(ctx context.Context, tenantID, appID, resourceType, resourceID, subjectID, subjectType string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	key := m.resourceKey(resourceType, resourceID)
+	key := m.resourceKey(tenantID, appID, resourceType, resourceID)
 
 	// Remove entry
 	newACL := []*ACLEntry{}
@@ -109,12 +145,12 @@ func (m *Manager) RevokeAll(ctx context.Context, resourceType, resourceID, subje
 	return nil
 }
 
-// Check checks if a subject has permission on a resource
-func (m *Manager) Check(ctx context.Context, resourceType, resourceID, subjectID string, permission string, identity *subject.IdentityContext) (bool, error) {
+// checkPermission checks if a subject has permission on a resource (internal method)
+func (m *Manager) checkPermission(_ context.Context, tenantID, appID, resourceType, resourceID, subjectID, permission string, identity *subject.IdentityContext) (bool, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	key := m.resourceKey(resourceType, resourceID)
+	key := m.resourceKey(tenantID, appID, resourceType, resourceID)
 	entries := m.acls[key]
 
 	// Check user-specific permissions
@@ -143,11 +179,11 @@ func (m *Manager) Check(ctx context.Context, resourceType, resourceID, subjectID
 }
 
 // GetPermissions gets all permissions for a subject on a resource
-func (m *Manager) GetPermissions(ctx context.Context, resourceType, resourceID, subjectID string, identity *subject.IdentityContext) ([]string, error) {
+func (m *Manager) GetPermissions(ctx context.Context, tenantID, appID, resourceType, resourceID, subjectID string, identity *subject.IdentityContext) ([]string, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	key := m.resourceKey(resourceType, resourceID)
+	key := m.resourceKey(tenantID, appID, resourceType, resourceID)
 	entries := m.acls[key]
 
 	permSet := make(map[string]bool)
@@ -184,11 +220,11 @@ func (m *Manager) GetPermissions(ctx context.Context, resourceType, resourceID, 
 }
 
 // GetSubjects gets all subjects with permissions on a resource
-func (m *Manager) GetSubjects(ctx context.Context, resourceType, resourceID string) ([]string, error) {
+func (m *Manager) GetSubjects(ctx context.Context, tenantID, appID, resourceType, resourceID string) ([]string, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	key := m.resourceKey(resourceType, resourceID)
+	key := m.resourceKey(tenantID, appID, resourceType, resourceID)
 	entries := m.acls[key]
 
 	subjects := make([]string, 0, len(entries))
@@ -200,11 +236,11 @@ func (m *Manager) GetSubjects(ctx context.Context, resourceType, resourceID stri
 }
 
 // GetACL gets the full ACL for a resource
-func (m *Manager) GetACL(ctx context.Context, resourceType, resourceID string) ([]*ACLEntry, error) {
+func (m *Manager) GetACL(ctx context.Context, tenantID, appID, resourceType, resourceID string) ([]*ACLEntry, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	key := m.resourceKey(resourceType, resourceID)
+	key := m.resourceKey(tenantID, appID, resourceType, resourceID)
 	entries := m.acls[key]
 
 	// Return a copy
@@ -221,34 +257,34 @@ func (m *Manager) GetACL(ctx context.Context, resourceType, resourceID string) (
 }
 
 // SetACL sets the full ACL for a resource (replaces existing)
-func (m *Manager) SetACL(ctx context.Context, resourceType, resourceID string, entries []*ACLEntry) error {
+func (m *Manager) SetACL(ctx context.Context, tenantID, appID, resourceType, resourceID string, entries []*ACLEntry) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	key := m.resourceKey(resourceType, resourceID)
+	key := m.resourceKey(tenantID, appID, resourceType, resourceID)
 	m.acls[key] = entries
 
 	return nil
 }
 
 // DeleteACL deletes the entire ACL for a resource
-func (m *Manager) DeleteACL(ctx context.Context, resourceType, resourceID string) error {
+func (m *Manager) DeleteACL(ctx context.Context, tenantID, appID, resourceType, resourceID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	key := m.resourceKey(resourceType, resourceID)
+	key := m.resourceKey(tenantID, appID, resourceType, resourceID)
 	delete(m.acls, key)
 
 	return nil
 }
 
 // CopyACL copies ACL from one resource to another
-func (m *Manager) CopyACL(ctx context.Context, srcType, srcID, dstType, dstID string) error {
+func (m *Manager) CopyACL(ctx context.Context, tenantID, appID, srcType, srcID, dstType, dstID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	srcKey := m.resourceKey(srcType, srcID)
-	dstKey := m.resourceKey(dstType, dstID)
+	srcKey := m.resourceKey(tenantID, appID, srcType, srcID)
+	dstKey := m.resourceKey(tenantID, appID, dstType, dstID)
 
 	srcEntries := m.acls[srcKey]
 
@@ -269,8 +305,28 @@ func (m *Manager) CopyACL(ctx context.Context, srcType, srcID, dstType, dstID st
 
 // Evaluate evaluates an authorization request using ACL
 func (m *Manager) Evaluate(ctx context.Context, request *authz.AuthorizationRequest) (*authz.AuthorizationDecision, error) {
-	allowed, err := m.Check(
+	// Extract tenant and app from identity context
+	tenantID := request.Subject.TenantID
+	appID := request.Subject.AppID
+
+	// Validate tenant+app match resource
+	if request.Resource.TenantID != "" && request.Resource.TenantID != tenantID {
+		return &authz.AuthorizationDecision{
+			Allowed: false,
+			Reason:  "resource tenant mismatch",
+		}, nil
+	}
+	if request.Resource.AppID != "" && request.Resource.AppID != appID {
+		return &authz.AuthorizationDecision{
+			Allowed: false,
+			Reason:  "resource app mismatch",
+		}, nil
+	}
+
+	allowed, err := m.checkPermission(
 		ctx,
+		tenantID,
+		appID,
 		request.Resource.Type,
 		request.Resource.ID,
 		request.Subject.Subject.ID,
@@ -295,11 +351,6 @@ func (m *Manager) Evaluate(ctx context.Context, request *authz.AuthorizationRequ
 			"action":   request.Action,
 		},
 	}, nil
-}
-
-// resourceKey creates a unique key for a resource
-func (m *Manager) resourceKey(resourceType, resourceID string) string {
-	return fmt.Sprintf("%s:%s", strings.ToLower(resourceType), resourceID)
 }
 
 // contains checks if a slice contains a string

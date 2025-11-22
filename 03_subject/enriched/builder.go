@@ -131,7 +131,8 @@ func (e *ProfileEnricher) Enrich(ctx context.Context, identity *subject.Identity
 		return nil
 	}
 
-	profile, err := e.profileProvider.GetProfile(ctx, identity.Subject)
+	// Use tenant ID from identity context (already set by builder)
+	profile, err := e.profileProvider.GetProfile(ctx, identity.TenantID, identity.Subject)
 	if err != nil {
 		return fmt.Errorf("failed to get profile: %w", err)
 	}

@@ -16,9 +16,11 @@ type Evaluator struct {
 	defaultDecision   bool
 }
 
-// Rule represents an ABAC rule
+// Rule represents an ABAC rule (tenant and app scoped)
 type Rule struct {
 	ID          string
+	TenantID    string // Tenant this rule belongs to (required)
+	AppID       string // App this rule belongs to (optional, empty = all apps in tenant)
 	Description string
 	Effect      string // "allow" or "deny"
 	Conditions  []Condition
@@ -63,24 +65,59 @@ func (e *Evaluator) sortRules() {
 
 // Evaluate evaluates ABAC policies for an authorization request
 func (e *Evaluator) Evaluate(ctx context.Context, request *authz.AuthorizationRequest) (*authz.AuthorizationDecision, error) {
+	// Extract tenant and app from identity context
+	tenantID := request.Subject.TenantID
+	appID := request.Subject.AppID
+
+	// Validate tenant+app match resource
+	if request.Resource.TenantID != "" && request.Resource.TenantID != tenantID {
+		return &authz.AuthorizationDecision{
+			Allowed: false,
+			Reason:  "resource tenant mismatch",
+		}, nil
+	}
+	if request.Resource.AppID != "" && request.Resource.AppID != appID {
+		return &authz.AuthorizationDecision{
+			Allowed: false,
+			Reason:  "resource app mismatch",
+		}, nil
+	}
+
 	// Collect attributes
 	subjectAttrs := e.getSubjectAttributes(request.Subject)
+
+	// Add tenant and app to subject attributes for rule evaluation
+	subjectAttrs["tenant_id"] = tenantID
+	subjectAttrs["app_id"] = appID
+
 	resourceAttrs := request.Resource.Attributes
 	if resourceAttrs == nil {
 		resourceAttrs = make(map[string]any)
 	}
 
-	// Add resource type and ID to attributes
+	// Add resource type, ID, tenant, and app to attributes
 	resourceAttrs["type"] = request.Resource.Type
 	resourceAttrs["id"] = request.Resource.ID
+	resourceAttrs["tenant_id"] = request.Resource.TenantID
+	resourceAttrs["app_id"] = request.Resource.AppID
 
 	envAttrs := request.Context
 	if envAttrs == nil {
 		envAttrs = make(map[string]any)
 	}
 
-	// Evaluate rules in priority order
+	// Evaluate rules in priority order (only rules for this tenant+app)
 	for _, rule := range e.rules {
+		// Skip rules for other tenants
+		if rule.TenantID != tenantID {
+			continue
+		}
+
+		// Skip rules for other apps (unless rule applies to all apps)
+		if rule.AppID != "" && rule.AppID != appID {
+			continue
+		}
+
 		matches, err := e.evaluateRule(rule, request.Action, subjectAttrs, resourceAttrs, envAttrs)
 		if err != nil {
 			return nil, err
@@ -225,14 +262,19 @@ func toFloat64(v any) (float64, bool) {
 	}
 }
 
-// getSubjectAttributes extracts attributes from identity context
+// getSubjectAttributes extracts attributes from identity context (includes tenant+app)
 func (e *Evaluator) getSubjectAttributes(identity *subject.IdentityContext) map[string]any {
 	attrs := make(map[string]any)
+
+	// Add tenant and app context
+	attrs["tenant_id"] = identity.TenantID
+	attrs["app_id"] = identity.AppID
 
 	if identity.Subject != nil {
 		attrs["id"] = identity.Subject.ID
 		attrs["type"] = identity.Subject.Type
 		attrs["principal"] = identity.Subject.Principal
+		attrs["subject_tenant_id"] = identity.Subject.TenantID
 
 		// Add all subject attributes
 		for k, v := range identity.Subject.Attributes {

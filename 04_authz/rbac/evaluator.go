@@ -9,8 +9,10 @@ import (
 	authz "github.com/primadi/lokstra-auth/04_authz"
 )
 
-// Evaluator is an RBAC policy evaluator
+// Evaluator is an RBAC policy evaluator (multi-tenant aware)
 type Evaluator struct {
+	// rolePermissions: map[tenantID:appID:role] -> []permissions
+	// Composite key ensures tenant+app isolation
 	rolePermissions map[string][]string
 }
 
@@ -21,8 +23,31 @@ func NewEvaluator(rolePermissions map[string][]string) *Evaluator {
 	}
 }
 
+// makeRoleKey creates a composite key for tenant+app+role
+func (e *Evaluator) makeRoleKey(tenantID, appID, role string) string {
+	return tenantID + ":" + appID + ":" + role
+}
+
 // Evaluate evaluates policies for an authorization request
 func (e *Evaluator) Evaluate(ctx context.Context, request *authz.AuthorizationRequest) (*authz.AuthorizationDecision, error) {
+	// Extract tenant and app from identity context
+	tenantID := request.Subject.TenantID
+	appID := request.Subject.AppID
+
+	// Validate tenant+app match resource
+	if request.Resource.TenantID != "" && request.Resource.TenantID != tenantID {
+		return &authz.AuthorizationDecision{
+			Allowed: false,
+			Reason:  "resource tenant mismatch",
+		}, nil
+	}
+	if request.Resource.AppID != "" && request.Resource.AppID != appID {
+		return &authz.AuthorizationDecision{
+			Allowed: false,
+			Reason:  "resource app mismatch",
+		}, nil
+	}
+
 	// Build required permission from resource and action
 	requiredPermission := fmt.Sprintf("%s:%s:%s",
 		request.Resource.Type,
@@ -34,7 +59,9 @@ func (e *Evaluator) Evaluate(ctx context.Context, request *authz.AuthorizationRe
 
 	// Check if any of the subject's roles have the required permission
 	for _, role := range request.Subject.Roles {
-		permissions, ok := e.rolePermissions[role]
+		// Use composite key for tenant+app+role lookup
+		roleKey := e.makeRoleKey(tenantID, appID, role)
+		permissions, ok := e.rolePermissions[roleKey]
 		if !ok {
 			continue
 		}
@@ -99,10 +126,14 @@ func (e *Evaluator) matchPermission(pattern, required string) bool {
 	return true
 }
 
-// HasPermission checks if the subject has a specific permission
+// HasPermission checks if the subject has a specific permission (tenant+app scoped)
 func (e *Evaluator) HasPermission(ctx context.Context, identity *subject.IdentityContext, permission string) (bool, error) {
+	tenantID := identity.TenantID
+	appID := identity.AppID
+
 	for _, role := range identity.Roles {
-		permissions, ok := e.rolePermissions[role]
+		roleKey := e.makeRoleKey(tenantID, appID, role)
+		permissions, ok := e.rolePermissions[roleKey]
 		if !ok {
 			continue
 		}
@@ -160,15 +191,16 @@ func (e *Evaluator) HasAllRoles(ctx context.Context, identity *subject.IdentityC
 	return identity.HasAllRoles(roles...), nil
 }
 
-// AddRolePermission adds a permission to a role
-func (e *Evaluator) AddRolePermission(role string, permission string) {
+// AddRolePermission adds a permission to a role (tenant+app scoped)
+func (e *Evaluator) AddRolePermission(tenantID, appID, role, permission string) {
 	if e.rolePermissions == nil {
 		e.rolePermissions = make(map[string][]string)
 	}
 
-	permissions, ok := e.rolePermissions[role]
+	roleKey := e.makeRoleKey(tenantID, appID, role)
+	permissions, ok := e.rolePermissions[roleKey]
 	if !ok {
-		e.rolePermissions[role] = []string{permission}
+		e.rolePermissions[roleKey] = []string{permission}
 		return
 	}
 
@@ -179,27 +211,29 @@ func (e *Evaluator) AddRolePermission(role string, permission string) {
 		}
 	}
 
-	e.rolePermissions[role] = append(permissions, permission)
+	e.rolePermissions[roleKey] = append(permissions, permission)
 }
 
-// RemoveRolePermission removes a permission from a role
-func (e *Evaluator) RemoveRolePermission(role string, permission string) {
-	permissions, ok := e.rolePermissions[role]
+// RemoveRolePermission removes a permission from a role (tenant+app scoped)
+func (e *Evaluator) RemoveRolePermission(tenantID, appID, role, permission string) {
+	roleKey := e.makeRoleKey(tenantID, appID, role)
+	permissions, ok := e.rolePermissions[roleKey]
 	if !ok {
 		return
 	}
 
 	for i, p := range permissions {
 		if p == permission {
-			e.rolePermissions[role] = append(permissions[:i], permissions[i+1:]...)
+			e.rolePermissions[roleKey] = append(permissions[:i], permissions[i+1:]...)
 			return
 		}
 	}
 }
 
-// GetRolePermissions returns all permissions for a role
-func (e *Evaluator) GetRolePermissions(role string) []string {
-	permissions, ok := e.rolePermissions[role]
+// GetRolePermissions returns all permissions for a role (tenant+app scoped)
+func (e *Evaluator) GetRolePermissions(tenantID, appID, role string) []string {
+	roleKey := e.makeRoleKey(tenantID, appID, role)
+	permissions, ok := e.rolePermissions[roleKey]
 	if !ok {
 		return []string{}
 	}

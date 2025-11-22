@@ -109,7 +109,7 @@ func main() {
 	fmt.Println("3️⃣  Cache Invalidation...")
 
 	fmt.Println("   Invalidating cache for user123...")
-	err = cachedBuilder.Invalidate(ctx, "user123")
+	err = cachedBuilder.Invalidate(ctx, "acme-corp", "acme-corp", "user123")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -195,7 +195,7 @@ func main() {
 	// Example 7: List Sessions by Subject
 	fmt.Println("7️⃣  Listing All Sessions for User...")
 
-	userSessions, err := store.ListBySubject(ctx, "user123")
+	userSessions, err := store.ListBySubject(ctx, "acme-corp", "user123")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -246,21 +246,21 @@ func main() {
 
 	fmt.Println("✅ Mobile session deleted")
 
-	remainingSessions, _ := store.ListBySubject(ctx, "user123")
+	remainingSessions, _ := store.ListBySubject(ctx, "acme-corp", "user123")
 	fmt.Printf("   Remaining sessions: %d\n", len(remainingSessions))
 	fmt.Println()
 
 	// Example 11: Logout All Sessions for User
 	fmt.Println("1️⃣1️⃣  Logging Out All User Sessions...")
 
-	err = store.DeleteBySubject(ctx, "user123")
+	err = store.DeleteBySubject(ctx, "acme-corp", "user123")
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println("✅ All sessions deleted for user123")
 
-	finalSessions, _ := store.ListBySubject(ctx, "user123")
+	finalSessions, _ := store.ListBySubject(ctx, "acme-corp", "user123")
 	fmt.Printf("   Sessions remaining: %d\n", len(finalSessions))
 	fmt.Println()
 

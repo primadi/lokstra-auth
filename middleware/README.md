@@ -119,7 +119,7 @@ authMiddleware := middleware.NewAuthMiddleware(middleware.AuthMiddlewareConfig{
     Auth: auth,
     ErrorHandler: func(c *request.Context, err error) error {
         c.Resp.WithStatus(401)
-        return c.Resp.Json(map[string]interface{}{
+        return c.Resp.Json(map[string]any{
             "error": "Authentication failed",
             "details": err.Error(),
         })
@@ -256,7 +256,7 @@ func handler(c *request.Context) error {
     // Get identity (returns nil if not authenticated)
     identity, ok := middleware.GetIdentity(c)
     if !ok {
-        return c.Resp.Json(map[string]interface{}{
+        return c.Resp.Json(map[string]any{
             "error": "Not authenticated",
         })
     }
@@ -267,7 +267,7 @@ func handler(c *request.Context) error {
     roles := identity.Roles
     permissions := identity.Permissions
 
-    return c.Resp.Json(map[string]interface{}{
+    return c.Resp.Json(map[string]any{
         "user_id": userID,
         "email": email,
         "roles": roles,
@@ -306,7 +306,7 @@ app.POST("/api/admin/users",
     // 4. Handler
     func(c *request.Context) error {
         // User is authenticated, has admin role, and delete:users permission
-        return c.Resp.Json(map[string]interface{}{
+        return c.Resp.Json(map[string]any{
             "message": "User deleted",
         })
     },

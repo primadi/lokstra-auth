@@ -29,7 +29,25 @@ func NewEvaluator(store authz.PolicyStore, combineAlgorithm string) *Evaluator {
 
 // Evaluate evaluates policies for an authorization request
 func (e *Evaluator) Evaluate(ctx context.Context, request *authz.AuthorizationRequest) (*authz.AuthorizationDecision, error) {
-	// Find applicable policies
+	// Extract tenant and app from identity context
+	tenantID := request.Subject.TenantID
+	appID := request.Subject.AppID
+
+	// Validate tenant+app match resource
+	if request.Resource.TenantID != "" && request.Resource.TenantID != tenantID {
+		return &authz.AuthorizationDecision{
+			Allowed: false,
+			Reason:  "resource tenant mismatch",
+		}, nil
+	}
+	if request.Resource.AppID != "" && request.Resource.AppID != appID {
+		return &authz.AuthorizationDecision{
+			Allowed: false,
+			Reason:  "resource app mismatch",
+		}, nil
+	}
+
+	// Find applicable policies (tenant+app scoped)
 	policies, err := e.findApplicablePolicies(ctx, request)
 	if err != nil {
 		return nil, err
@@ -46,34 +64,42 @@ func (e *Evaluator) Evaluate(ctx context.Context, request *authz.AuthorizationRe
 	return e.combinePolicies(policies, request), nil
 }
 
-// findApplicablePolicies finds policies applicable to the request
+// findApplicablePolicies finds policies applicable to the request (tenant+app scoped)
 func (e *Evaluator) findApplicablePolicies(ctx context.Context, request *authz.AuthorizationRequest) ([]*authz.Policy, error) {
+	tenantID := request.Subject.TenantID
+	appID := request.Subject.AppID
 	subjectID := request.Subject.Subject.ID
 
-	// Get policies for subject
-	subjectPolicies, err := e.store.FindBySubject(ctx, subjectID)
+	// Get policies for subject (tenant+app scoped)
+	subjectPolicies, err := e.store.FindBySubject(ctx, tenantID, appID, subjectID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get policies for resource
-	resourcePolicies, err := e.store.FindByResource(ctx, request.Resource.Type, request.Resource.ID)
+	// Get policies for resource (tenant+app scoped)
+	resourcePolicies, err := e.store.FindByResource(ctx, tenantID, appID, request.Resource.Type, request.Resource.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Combine and filter applicable policies
+	// Combine and filter applicable policies (only for this tenant+app)
 	policyMap := make(map[string]*authz.Policy)
 
 	for _, policy := range subjectPolicies {
-		if e.policyApplies(policy, request) {
-			policyMap[policy.ID] = policy
+		// Extra check: ensure policy belongs to correct tenant+app
+		if policy.TenantID == tenantID && (policy.AppID == "" || policy.AppID == appID) {
+			if e.policyApplies(policy, request) {
+				policyMap[policy.ID] = policy
+			}
 		}
 	}
 
 	for _, policy := range resourcePolicies {
-		if e.policyApplies(policy, request) {
-			policyMap[policy.ID] = policy
+		// Extra check: ensure policy belongs to correct tenant+app
+		if policy.TenantID == tenantID && (policy.AppID == "" || policy.AppID == appID) {
+			if e.policyApplies(policy, request) {
+				policyMap[policy.ID] = policy
+			}
 		}
 	}
 

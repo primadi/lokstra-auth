@@ -13,7 +13,9 @@ import (
 // SimpleAttributeProvider provides attributes from identity metadata
 type SimpleAttributeProvider struct{}
 
-func (p *SimpleAttributeProvider) GetSubjectAttributes(ctx context.Context, subjectID string) (map[string]any, error) {
+var _ authz.AttributeProvider = (*SimpleAttributeProvider)(nil)
+
+func (p *SimpleAttributeProvider) GetSubjectAttributes(ctx context.Context, tenantId, subjectID string) (map[string]any, error) {
 	return nil, nil // Not used in this example
 }
 

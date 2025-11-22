@@ -40,6 +40,12 @@ func (r *Resolver) Resolve(ctx context.Context, claims map[string]any) (*subject
 		return nil, fmt.Errorf("missing or invalid subject ID claim: %s", r.SubjectIDClaim)
 	}
 
+	// Extract tenant ID (REQUIRED for multi-tenant)
+	tenantID, ok := r.getStringClaim(claims, "tenant_id")
+	if !ok || tenantID == "" {
+		return nil, fmt.Errorf("missing or invalid tenant_id claim")
+	}
+
 	// Extract subject type
 	subType, ok := r.getStringClaim(claims, r.SubjectTypeClaim)
 	if !ok || subType == "" {
@@ -61,13 +67,14 @@ func (r *Resolver) Resolve(ctx context.Context, claims map[string]any) (*subject
 	attributes := make(map[string]any)
 	for k, v := range claims {
 		// Skip the claims we already extracted
-		if k != r.SubjectIDClaim && k != r.SubjectTypeClaim && k != r.PrincipalClaim {
+		if k != r.SubjectIDClaim && k != r.SubjectTypeClaim && k != r.PrincipalClaim && k != "tenant_id" {
 			attributes[k] = v
 		}
 	}
 
 	return &subject.Subject{
 		ID:         subID,
+		TenantID:   tenantID,
 		Type:       subType,
 		Principal:  principal,
 		Attributes: attributes,

@@ -116,7 +116,7 @@ func DefaultTokenExtractor(c *request.Context) (string, error) {
 // DefaultErrorHandler returns 401 Unauthorized
 func DefaultErrorHandler(c *request.Context, err error) error {
 	c.Resp.WithStatus(401)
-	return c.Resp.Json(map[string]interface{}{
+	return c.Resp.Json(map[string]any{
 		"error":   "Unauthorized",
 		"message": err.Error(),
 	})

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	credential "github.com/primadi/lokstra-auth/01_credential"
+	credential "github.com/primadi/lokstra-auth/01_credential/domain"
 	token "github.com/primadi/lokstra-auth/02_token"
 	subject "github.com/primadi/lokstra-auth/03_subject"
 	authz "github.com/primadi/lokstra-auth/04_authz"
@@ -112,6 +112,9 @@ func (a *Auth) GetAuthorizer() authz.Authorizer {
 
 // LoginRequest represents a login request
 type LoginRequest struct {
+	// AuthContext contains tenant and app context (REQUIRED for multi-tenant)
+	AuthContext *credential.AuthContext
+
 	// Credentials contains the credentials to authenticate
 	Credentials credential.Credentials
 
@@ -137,6 +140,14 @@ type LoginResponse struct {
 // Login performs the complete authentication flow
 // Layer 1 -> Layer 2 -> Layer 3
 func (a *Auth) Login(ctx context.Context, request *LoginRequest) (*LoginResponse, error) {
+	// Validate auth context
+	if request.AuthContext == nil {
+		return nil, errors.New("auth context is required")
+	}
+	if err := request.AuthContext.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid auth context: %w", err)
+	}
+
 	// Layer 1: Authenticate credentials
 	credType := request.Credentials.Type()
 	authenticator, ok := a.authenticators[credType]
@@ -144,7 +155,7 @@ func (a *Auth) Login(ctx context.Context, request *LoginRequest) (*LoginResponse
 		return nil, fmt.Errorf("%w: %s", ErrNoAuthenticator, credType)
 	}
 
-	authResult, err := authenticator.Authenticate(ctx, request.Credentials)
+	authResult, err := authenticator.Authenticate(ctx, request.AuthContext, request.Credentials)
 	if err != nil {
 		return nil, fmt.Errorf("authentication error: %w", err)
 	}

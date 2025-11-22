@@ -1,22 +1,22 @@
-# Layer 01: Credential - Authentication Layer
+ # Layer 01: Credential - Authentication Layer
 
-Layer pertama dalam arsitektur autentikasi Lokstra yang menangani berbagai metode autentikasi pengguna.
+The first layer in Lokstra's authentication architecture that handles various user authentication methods.
 
-## 📋 Daftar Isi
+## 📋 Table of Contents
 
-- [Arsitektur](#arsitektur)
+- [Architecture](#architecture)
 - [Interface Contract](#interface-contract)
-- [Implementasi](#implementasi)
+- [Implementation](#implementation)
   - [Basic Authenticator](#basic-authenticator)
   - [OAuth2 Authenticator](#oauth2-authenticator)
   - [Passwordless Authenticator](#passwordless-authenticator)
   - [API Key Authenticator](#api-key-authenticator)
-- [Penggunaan](#penggunaan)
+- [Usage](#usage)
 - [Extensibility](#extensibility)
 
-## 🏗️ Arsitektur
+## 🏗️ Architecture
 
-Layer Credential mengikuti pattern contract-first dengan interface yang jelas:
+The Credential layer follows a contract-first pattern with clear interfaces:
 
 ```
 01_credential/
@@ -33,65 +33,134 @@ Layer Credential mengikuti pattern contract-first dengan interface yang jelas:
 
 ## 🔌 Interface Contract
 
-### Credentials Interface
+The credential layer defines **3 core interfaces** that all authenticators must implement:
+
+### 1. Credentials Interface
+
+Represents user credentials input for any authentication method.
 
 ```go
 type Credentials interface {
-    Type() string     // Jenis kredensial
-    Validate() error  // Validasi kredensial
+    Type() string     // Returns the credential type (e.g., "basic", "oauth2", "apikey")
+    Validate() error  // Validates credential format
 }
 ```
 
-### Authenticator Interface
+### 2. Authenticator Interface
+
+Main interface for authenticating credentials. **This is the only general contract** used by all authentication implementations.
 
 ```go
 type Authenticator interface {
     Authenticate(ctx context.Context, creds Credentials) (*AuthenticationResult, error)
-    Type() string
+    Type() string // Returns authenticator type (must match Credentials.Type())
 }
 ```
 
-### AuthenticationResult
+### 3. AuthenticationResult Struct
+
+Standardized result returned by all authenticators.
 
 ```go
 type AuthenticationResult struct {
-    Success bool
-    Subject string                 // User ID
-    Claims  map[string]interface{} // Metadata tambahan
-    Error   error
+    Success  bool               // Whether authentication succeeded
+    Subject  string             // Authenticated user ID
+    Claims   map[string]any     // Additional claims for token
+    Metadata map[string]any     // Authentication metadata
+    Error    error              // Error if authentication failed
 }
 ```
 
-## 🔐 Implementasi
+### Additional Contracts (Implementation-Specific)
+
+Some authenticators define their own specific contracts:
+
+**Basic Authenticator:**
+- `CredentialValidator` - Validates username/password complexity (see `01_credential/basic/contract.go`)
+- `UserProvider` - Retrieves user data from storage
+
+**Passkey Authenticator:**
+- `CredentialStore` - Manages WebAuthn credentials (see `01_credential/passkey/store.go`)
+
+**Passwordless Authenticator:**
+- `TokenStore` - Manages OTP/Magic Link tokens
+- `UserResolver` - Resolves user ID from email
+- `TokenSender` - Sends tokens via email
+
+**API Key Authenticator:**
+- `KeyStore` - Stores and validates API keys
+
+## 🔐 Implementation
 
 ### Basic Authenticator
 
-Autentikasi berbasis username/email dan password dengan bcrypt hashing.
+Username/password authentication with bcrypt hashing and extensible storage.
 
 **Features:**
 - Bcrypt password hashing (cost factor 10)
-- Username atau email login
-- User store interface untuk extensibility
-- In-memory implementation untuk testing
+- Username-based login
+- Extensible `UserProvider` interface
+- Standard `User` model for all implementations
+- In-memory store for testing/development
+- Database store example for production
 
-**Penggunaan:**
+**Architecture:**
+
+```
+01_credential/basic/
+├── contract.go          # User model + UserProvider interface + CredentialValidator
+├── authenticator.go     # Authentication logic
+├── credential.go        # BasicCredentials struct
+├── credential_validator.go  # Password complexity validation
+├── store_inmemory.go    # In-memory implementation (testing)
+└── store_database.go    # PostgreSQL example (production)
+```
+
+**Core Contracts:**
+
+1. **User Model** - Standard model for all UserProvider implementations:
+
+```go
+type User struct {
+    ID           string         // Unique user identifier
+    Username     string         // Username for login
+    PasswordHash string         // Bcrypt hashed password
+    Email        string         // User email address
+    Disabled     bool           // Account status
+    Metadata     map[string]any // Custom metadata
+}
+```
+
+2. **UserProvider Interface** - Storage abstraction:
+
+```go
+type UserProvider interface {
+    GetUserByUsername(ctx context.Context, username string) (*User, error)
+}
+```
+
+**Usage:**
 
 ```go
 import "github.com/primadi/lokstra-auth/01_credential/basic"
 
-// Setup authenticator
+// For testing/development - use in-memory store
 userStore := basic.NewInMemoryUserStore()
-auth := basic.NewAuthenticator(&basic.Config{
-    UserStore: userStore,
-})
 
-// Register user
+// For production - use database store
+// db, _ := sql.Open("postgres", connString)
+// userStore := basic.NewDatabaseUserStore(db)
+
+// Setup authenticator
+auth := basic.NewAuthenticator(userStore, nil)
+
+// Register user (in-memory example)
 hashedPassword, _ := basic.HashPassword("mypassword")
 userStore.AddUser(&basic.User{
     ID:       "user123",
     Username: "john",
     Email:    "john@example.com",
-    Password: hashedPassword,
+    PasswordHash: hashedPassword,
 })
 
 // Authenticate
@@ -106,23 +175,44 @@ if result.Success {
 }
 ```
 
-**UserStore Interface:**
+**Implementations:**
+
+1. **InMemoryUserStore** - For testing and development:
+   - Thread-safe with mutex
+   - Helper methods: AddUser, RemoveUser, UpdateUser, ListUsers
+   - No persistence
+
+2. **DatabaseUserStore** - For production (PostgreSQL example):
+   - SQL database backend
+   - User lookup by username or email
+   - CRUD operations
+   - Can be adapted for MySQL, SQLite, etc.
+
+**Custom Implementation:**
+
+Implement `UserProvider` for your database/storage:
 
 ```go
-type UserStore interface {
-    GetByUsername(ctx context.Context, username string) (*User, error)
-    GetByEmail(ctx context.Context, email string) (*User, error)
-    GetByID(ctx context.Context, id string) (*User, error)
+type MongoUserStore struct {
+    collection *mongo.Collection
+}
+
+func (s *MongoUserStore) GetUserByUsername(ctx context.Context, username string) (*basic.User, error) {
+    var user basic.User
+    filter := bson.M{"username": username, "disabled": false}
+    err := s.collection.FindOne(ctx, filter).Decode(&user)
+    if err == mongo.ErrNoDocuments {
+        return nil, basic.ErrUserNotFound
+    }
+    return &user, err
 }
 ```
-
-Implementasi custom dapat menggunakan database (PostgreSQL, MongoDB, dll).
 
 ---
 
 ### OAuth2 Authenticator
 
-Autentikasi menggunakan OAuth2 providers (Google, GitHub, Facebook).
+Authentication using OAuth2 providers (Google, GitHub, Facebook).
 
 **Supported Providers:**
 - **Google** - OpenID Connect
@@ -131,17 +221,17 @@ Autentikasi menggunakan OAuth2 providers (Google, GitHub, Facebook).
 
 **Features:**
 - Authorization code flow
-- Token validation dengan provider
+- Token validation with provider
 - User info fetching
 - Email verification
 - Configurable client credentials per provider
 
-**Penggunaan:**
+**Usage:**
 
 ```go
 import "github.com/primadi/lokstra-auth/01_credential/oauth2"
 
-// Setup authenticator dengan multiple providers
+// Setup authenticator with multiple providers
 auth := oauth2.NewAuthenticator(&oauth2.Config{
     Providers: map[string]*oauth2.ProviderConfig{
         "google": {
@@ -157,7 +247,7 @@ auth := oauth2.NewAuthenticator(&oauth2.Config{
     },
 })
 
-// Authenticate dengan authorization code
+// Authenticate with authorization code
 creds := &oauth2.Credentials{
     Provider:          "google",
     AuthorizationCode: "code-from-oauth-callback",
@@ -182,28 +272,28 @@ type ProviderConfig struct {
 }
 ```
 
-**Claims dari Providers:**
+**Claims from Providers:**
 
 Google:
-- `email` - Email pengguna
-- `name` - Nama lengkap
-- `picture` - URL foto profil
-- `email_verified` - Status verifikasi email
+- `email` - User email
+- `name` - Full name
+- `picture` - Profile picture URL
+- `email_verified` - Email verification status
 
 GitHub:
-- `email` - Email primary (verified)
-- `login` - Username GitHub
-- `name` - Nama lengkap
-- `avatar_url` - URL avatar
+- `email` - Primary email (verified)
+- `login` - GitHub username
+- `name` - Full name
+- `avatar_url` - Avatar URL
 
 Facebook:
-- `email` - Email pengguna
-- `name` - Nama lengkap
-- `picture` - URL foto profil
+- `email` - User email
+- `name` - Full name
+- `picture` - Profile picture URL
 
 **Implementation Details:**
 
-Authenticator menggunakan HTTP client untuk berkomunikasi dengan provider APIs:
+Authenticator uses HTTP client to communicate with provider APIs:
 - Google: `https://www.googleapis.com/oauth2/v2/userinfo`
 - GitHub: `https://api.github.com/user` + `/user/emails`
 - Facebook: `https://graph.facebook.com/me`
@@ -212,11 +302,11 @@ Authenticator menggunakan HTTP client untuk berkomunikasi dengan provider APIs:
 
 ### Passwordless Authenticator
 
-Autentikasi tanpa password menggunakan Magic Link atau OTP.
+Password-less authentication using Magic Link or OTP.
 
 **Authentication Methods:**
-1. **Magic Link** - URL token dikirim via email (expiry 15 menit)
-2. **OTP** - 6-digit code dikirim via email (expiry 5 menit)
+1. **Magic Link** - URL token sent via email (15 minute expiry)
+2. **OTP** - 6-digit code sent via email (5 minute expiry)
 
 **Features:**
 - Token lifecycle management (generation, validation, expiry)
@@ -226,7 +316,7 @@ Autentikasi tanpa password menggunakan Magic Link atau OTP.
 - Email sender interface
 - User resolver interface
 
-**Penggunaan Magic Link:**
+**Magic Link Usage:**
 
 ```go
 import "github.com/primadi/lokstra-auth/01_credential/passwordless"
@@ -246,7 +336,7 @@ creds := &passwordless.Credentials{
 }
 
 result, err := auth.Authenticate(ctx, creds)
-// Token akan dikirim via email menggunakan TokenSender
+// Token will be sent via email using TokenSender
 
 // Verify magic link
 creds = &passwordless.Credentials{
@@ -261,7 +351,7 @@ if result.Success {
 }
 ```
 
-**Penggunaan OTP:**
+**OTP Usage:**
 
 ```go
 // Request OTP
@@ -271,7 +361,7 @@ creds := &passwordless.Credentials{
 }
 
 result, err := auth.Authenticate(ctx, creds)
-// OTP 6-digit akan dikirim via email
+// 6-digit OTP will be sent via email
 
 // Verify OTP
 creds = &passwordless.Credentials{
@@ -317,7 +407,7 @@ type TokenSender interface {
 
 - `InMemoryTokenStore` - Mutex-protected in-memory map
 - `DefaultTokenGenerator` - 32-byte random magic link, 6-digit OTP
-- User harus menyediakan: `UserResolver`, `TokenSender`
+- User must provide: `UserResolver`, `TokenSender`
 
 **Token Cleanup:**
 
@@ -336,7 +426,7 @@ tokenStore := passwordless.NewInMemoryTokenStore()
 
 ### API Key Authenticator
 
-Autentikasi berbasis API key untuk service-to-service atau programmatic access.
+API key-based authentication for service-to-service or programmatic access.
 
 **Features:**
 - SHA3-256 key hashing
@@ -345,10 +435,10 @@ Autentikasi berbasis API key untuk service-to-service atau programmatic access.
 - Key revocation
 - Usage tracking (last used timestamp)
 - Metadata support
-- Key prefix untuk identification
-- In-memory dan custom key store
+- Key prefix for identification
+- In-memory and custom key store
 
-**Penggunaan:**
+**Usage:**
 
 ```go
 import "github.com/primadi/lokstra-auth/01_credential/apikey"
@@ -412,7 +502,7 @@ type APIKey struct {
     UserID    string                 // Owner
     Name      string                 // Descriptive name
     Scopes    []string               // Permissions
-    Metadata  map[string]interface{} // Custom metadata
+    Metadata  map[string]any // Custom metadata
     CreatedAt time.Time
     ExpiresAt *time.Time             // nil = never expires
     LastUsed  *time.Time
@@ -436,23 +526,23 @@ type KeyStore interface {
 
 **Security Features:**
 
-1. **Key Hashing**: API keys di-hash menggunakan SHA3-256 sebelum disimpan
-2. **One-time Display**: Key string hanya ditampilkan saat generation
-3. **Constant Time Comparison**: Mencegah timing attacks
-4. **Automatic Expiry Check**: Validasi expiry saat authentication
-5. **Revocation Support**: Soft delete dengan timestamp
+1. **Key Hashing**: API keys are hashed using SHA3-256 before storage
+2. **One-time Display**: Key string only displayed during generation
+3. **Constant Time Comparison**: Prevents timing attacks
+4. **Automatic Expiry Check**: Validates expiry during authentication
+5. **Revocation Support**: Soft delete with timestamp
 
 **Best Practices:**
 
 ```go
-// 1. Set expiration untuk production keys
+// 1. Set expiration for production keys
 thirtyDays := 30 * 24 * time.Hour
 keyString, _, err := auth.GenerateKey(ctx, userID, "Prod", scopes, &thirtyDays)
 
-// 2. Use scopes untuk limit permissions
+// 2. Use scopes to limit permissions
 scopes := []string{"read:users", "write:posts"}
 
-// 3. Add metadata untuk tracking
+// 3. Add metadata for tracking
 apiKey.Metadata["app_name"] = "Mobile App"
 apiKey.Metadata["environment"] = "production"
 
@@ -462,7 +552,7 @@ auth.RevokeKey(ctx, oldKeyID)
 // Generate new key
 newKey, _, _ := auth.GenerateKey(ctx, userID, "Rotated Key", scopes, &expiresIn)
 
-// 5. Monitor last used untuk detect unused keys
+// 5. Monitor last used to detect unused keys
 if apiKey.LastUsed != nil && time.Since(*apiKey.LastUsed) > 90*24*time.Hour {
     // Key not used in 90 days - consider revoking
 }
@@ -470,7 +560,7 @@ if apiKey.LastUsed != nil && time.Since(*apiKey.LastUsed) > 90*24*time.Hour {
 
 ---
 
-## 🚀 Penggunaan
+## 🚀 Usage
 
 ### Single Authenticator
 
@@ -503,7 +593,7 @@ func main() {
 
 ### Multi-Authenticator
 
-Gunakan `MultiAuthenticator` untuk mendukung berbagai metode autentikasi:
+Use `MultiAuthenticator` to support various authentication methods:
 
 ```go
 import (
@@ -539,7 +629,7 @@ func main() {
 
 ### Custom Authenticator
 
-Buat authenticator custom dengan mengimplementasi interface:
+Create custom authenticator by implementing the interface:
 
 ```go
 type MyCustomAuthenticator struct{}
@@ -549,7 +639,7 @@ func (a *MyCustomAuthenticator) Authenticate(ctx context.Context, creds credenti
     return &credential.AuthenticationResult{
         Success: true,
         Subject: "user123",
-        Claims: map[string]interface{}{
+        Claims: map[string]any{
             "method": "custom",
         },
     }, nil
@@ -560,32 +650,58 @@ func (a *MyCustomAuthenticator) Type() string {
 }
 ```
 
-### Custom User Store
+### Custom Storage Implementation
 
-Implementasi custom untuk database:
+The basic authenticator includes both in-memory and database examples.
+
+**Using the Database Store:**
 
 ```go
-type PostgresUserStore struct {
-    db *sql.DB
+import (
+    "database/sql"
+    _ "github.com/lib/pq"
+    "github.com/primadi/lokstra-auth/01_credential/basic"
+)
+
+// Setup database connection
+db, err := sql.Open("postgres", "postgres://user:pass@localhost/mydb?sslmode=disable")
+if err != nil {
+    log.Fatal(err)
 }
 
-func (s *PostgresUserStore) GetByUsername(ctx context.Context, username string) (*basic.User, error) {
+// Create database user store
+userStore := basic.NewDatabaseUserStore(db)
+
+// Use with authenticator
+auth := basic.NewAuthenticator(userStore, nil)
+```
+
+**Custom Implementation (e.g., MongoDB):**
+
+```go
+type MongoUserStore struct {
+    collection *mongo.Collection
+}
+
+func (s *MongoUserStore) GetUserByUsername(ctx context.Context, username string) (*basic.User, error) {
     var user basic.User
-    err := s.db.QueryRowContext(ctx,
-        "SELECT id, username, email, password FROM users WHERE username = $1",
-        username,
-    ).Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+    filter := bson.M{"username": username, "disabled": false}
     
-    if err == sql.ErrNoRows {
+    err := s.collection.FindOne(ctx, filter).Decode(&user)
+    if err == mongo.ErrNoDocuments {
         return nil, basic.ErrUserNotFound
     }
     return &user, err
 }
+
+// Use it
+userStore := &MongoUserStore{collection: mongoCollection}
+auth := basic.NewAuthenticator(userStore, nil)
 ```
 
 ### Custom Token Store
 
-Implementasi Redis untuk passwordless:
+Redis implementation for passwordless:
 
 ```go
 type RedisTokenStore struct {
@@ -596,7 +712,7 @@ func (s *RedisTokenStore) Store(ctx context.Context, email, token string, expire
     key := fmt.Sprintf("token:%s:%s:%s", tokenType, email, token)
     ttl := time.Until(expiresAt)
     
-    data := map[string]interface{}{
+    data := map[string]any{
         "token":      token,
         "email":      email,
         "type":       tokenType,
@@ -610,7 +726,7 @@ func (s *RedisTokenStore) Store(ctx context.Context, email, token string, expire
 
 ### Custom Key Store
 
-Implementasi database untuk API keys:
+Database implementation for API keys:
 
 ```go
 type DatabaseKeyStore struct {
@@ -639,44 +755,62 @@ golang.org/x/crypto/sha3
 
 ## ✅ Testing
 
-Setiap authenticator memiliki in-memory implementation untuk testing:
+Each authenticator provides in-memory implementations for testing without external dependencies:
 
-- `basic.InMemoryUserStore`
-- `passwordless.InMemoryTokenStore`
-- `apikey.InMemoryKeyStore`
+- `basic.InMemoryUserStore` - For basic authentication testing
+- `passwordless.InMemoryTokenStore` - For OTP/Magic Link testing
+- `apikey.InMemoryKeyStore` - For API key testing
 
-Gunakan untuk unit testing tanpa database:
+**Testing Basic Authentication:**
 
 ```go
 func TestAuthentication(t *testing.T) {
+    // Use in-memory store for testing
     userStore := basic.NewInMemoryUserStore()
-    auth := basic.NewAuthenticator(&basic.Config{
-        UserStore: userStore,
-    })
+    auth := basic.NewAuthenticator(userStore, nil)
     
     // Add test user
+    hashedPassword, _ := basic.HashPassword("testpass")
     userStore.AddUser(&basic.User{
-        ID:       "test",
-        Username: "testuser",
-        Password: "$2a$10$...",
+        ID:           "test123",
+        Username:     "testuser",
+        PasswordHash: hashedPassword,
+        Email:        "test@example.com",
     })
     
     // Test authentication
-    result, err := auth.Authenticate(ctx, creds)
+    creds := &basic.Credentials{
+        Username: "testuser",
+        Password: "testpass",
+    }
+    
+    result, err := auth.Authenticate(context.Background(), creds)
     assert.NoError(t, err)
     assert.True(t, result.Success)
+    assert.Equal(t, "test123", result.Subject)
 }
+```
+
+**For production code**, replace in-memory stores with database implementations:
+
+```go
+// Testing
+userStore := basic.NewInMemoryUserStore()
+
+// Production
+db, _ := sql.Open("postgres", connString)
+userStore := basic.NewDatabaseUserStore(db)
 ```
 
 ## 🔐 Security Considerations
 
-1. **Password Hashing**: Gunakan bcrypt dengan cost factor minimal 10
-2. **Token Expiry**: Set expiry yang reasonable untuk setiap token type
-3. **One-time Tokens**: Enforce one-time use untuk magic links dan OTP
-4. **API Key Storage**: Jangan simpan plain API keys, selalu hash
-5. **HTTPS Only**: OAuth2 redirect URLs harus HTTPS di production
-6. **Rate Limiting**: Implementasi rate limiting untuk prevent brute force
-7. **Audit Logging**: Log semua authentication attempts
+1. **Password Hashing**: Use bcrypt with minimum cost factor of 10
+2. **Token Expiry**: Set reasonable expiry for each token type
+3. **One-time Tokens**: Enforce one-time use for magic links and OTP
+4. **API Key Storage**: Don't store plain API keys, always hash
+5. **HTTPS Only**: OAuth2 redirect URLs must be HTTPS in production
+6. **Rate Limiting**: Implement rate limiting to prevent brute force
+7. **Audit Logging**: Log all authentication attempts
 
 ## 📚 Resources
 
@@ -688,4 +822,4 @@ func TestAuthentication(t *testing.T) {
 ---
 
 **Layer 01 Complete** ✅  
-Lanjut ke [Layer 02: Token](../02_token/README.md) untuk JWT token management.
+Continue to [Layer 02: Token](../02_token/README.md) for JWT token management.

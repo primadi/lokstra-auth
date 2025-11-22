@@ -2,6 +2,7 @@ package simple
 
 import (
 	"context"
+	"fmt"
 
 	subject "github.com/primadi/lokstra-auth/03_subject"
 )
@@ -31,41 +32,49 @@ func NewContextBuilder(
 
 // Build creates an IdentityContext from a subject
 func (b *ContextBuilder) Build(ctx context.Context, sub *subject.Subject) (*subject.IdentityContext, error) {
+	// Extract app_id from subject attributes (set by token claims)
+	appID, _ := sub.Attributes["app_id"].(string)
+	if appID == "" {
+		return nil, fmt.Errorf("missing app_id in subject attributes")
+	}
+
 	identity := &subject.IdentityContext{
 		Subject:  sub,
+		TenantID: sub.TenantID,
+		AppID:    appID,
 		Metadata: make(map[string]any),
 	}
 
-	// Load roles
+	// Load roles (scoped to tenant+app)
 	if b.roleProvider != nil {
-		roles, err := b.roleProvider.GetRoles(ctx, sub)
+		roles, err := b.roleProvider.GetRoles(ctx, sub.TenantID, appID, sub)
 		if err != nil {
 			return nil, err
 		}
 		identity.Roles = roles
 	}
 
-	// Load permissions
+	// Load permissions (scoped to tenant+app)
 	if b.permissionProvider != nil {
-		permissions, err := b.permissionProvider.GetPermissions(ctx, sub)
+		permissions, err := b.permissionProvider.GetPermissions(ctx, sub.TenantID, appID, sub)
 		if err != nil {
 			return nil, err
 		}
 		identity.Permissions = permissions
 	}
 
-	// Load groups
+	// Load groups (scoped to tenant)
 	if b.groupProvider != nil {
-		groups, err := b.groupProvider.GetGroups(ctx, sub)
+		groups, err := b.groupProvider.GetGroups(ctx, sub.TenantID, sub)
 		if err != nil {
 			return nil, err
 		}
 		identity.Groups = groups
 	}
 
-	// Load profile
+	// Load profile (scoped to tenant)
 	if b.profileProvider != nil {
-		profile, err := b.profileProvider.GetProfile(ctx, sub)
+		profile, err := b.profileProvider.GetProfile(ctx, sub.TenantID, sub)
 		if err != nil {
 			return nil, err
 		}
@@ -87,9 +96,11 @@ func NewStaticRoleProvider(roles map[string][]string) *StaticRoleProvider {
 	}
 }
 
-// GetRoles retrieves roles for a subject
-func (p *StaticRoleProvider) GetRoles(ctx context.Context, sub *subject.Subject) ([]string, error) {
-	if roles, ok := p.roles[sub.ID]; ok {
+// GetRoles retrieves roles for a subject (with tenant and app scoping)
+func (p *StaticRoleProvider) GetRoles(ctx context.Context, tenantID, appID string, sub *subject.Subject) ([]string, error) {
+	// Use composite key for tenant+app+user isolation
+	key := tenantID + ":" + appID + ":" + sub.ID
+	if roles, ok := p.roles[key]; ok {
 		return roles, nil
 	}
 	return []string{}, nil
@@ -107,9 +118,11 @@ func NewStaticPermissionProvider(permissions map[string][]string) *StaticPermiss
 	}
 }
 
-// GetPermissions retrieves permissions for a subject
-func (p *StaticPermissionProvider) GetPermissions(ctx context.Context, sub *subject.Subject) ([]string, error) {
-	if permissions, ok := p.permissions[sub.ID]; ok {
+// GetPermissions retrieves permissions for a subject (with tenant and app scoping)
+func (p *StaticPermissionProvider) GetPermissions(ctx context.Context, tenantID, appID string, sub *subject.Subject) ([]string, error) {
+	// Use composite key for tenant+app+user isolation
+	key := tenantID + ":" + appID + ":" + sub.ID
+	if permissions, ok := p.permissions[key]; ok {
 		return permissions, nil
 	}
 	return []string{}, nil
@@ -127,9 +140,11 @@ func NewStaticGroupProvider(groups map[string][]string) *StaticGroupProvider {
 	}
 }
 
-// GetGroups retrieves groups for a subject
-func (p *StaticGroupProvider) GetGroups(ctx context.Context, sub *subject.Subject) ([]string, error) {
-	if groups, ok := p.groups[sub.ID]; ok {
+// GetGroups retrieves groups for a subject (with tenant scoping)
+func (p *StaticGroupProvider) GetGroups(ctx context.Context, tenantID string, sub *subject.Subject) ([]string, error) {
+	// Use composite key for tenant+user isolation
+	key := tenantID + ":" + sub.ID
+	if groups, ok := p.groups[key]; ok {
 		return groups, nil
 	}
 	return []string{}, nil
@@ -147,9 +162,11 @@ func NewStaticProfileProvider(profiles map[string]map[string]any) *StaticProfile
 	}
 }
 
-// GetProfile retrieves profile information for a subject
-func (p *StaticProfileProvider) GetProfile(ctx context.Context, sub *subject.Subject) (map[string]any, error) {
-	if profile, ok := p.profiles[sub.ID]; ok {
+// GetProfile retrieves profile information for a subject (with tenant scoping)
+func (p *StaticProfileProvider) GetProfile(ctx context.Context, tenantID string, sub *subject.Subject) (map[string]any, error) {
+	// Use composite key for tenant+user isolation
+	key := tenantID + ":" + sub.ID
+	if profile, ok := p.profiles[key]; ok {
 		return profile, nil
 	}
 	return make(map[string]any), nil

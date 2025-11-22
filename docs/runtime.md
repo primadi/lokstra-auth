@@ -55,7 +55,7 @@ response, err := auth.Login(ctx, &lokstraauth.LoginRequest{
         Username: "john.doe",
         Password: "SecurePass123!",
     },
-    Metadata: map[string]interface{}{
+    Metadata: map[string]any{
         "ip_address": "192.168.1.100",
     },
 })
@@ -176,7 +176,7 @@ config := &lokstraauth.Config{
     DefaultAuthenticatorType: "basic",
     IssueRefreshToken:        true,
     SessionManagement:        false,
-    Metadata: map[string]interface{}{
+    Metadata: map[string]any{
         "app_name": "My Application",
     },
 }
@@ -240,7 +240,7 @@ Pass metadata through the authentication flow:
 ```go
 response, err := auth.Login(ctx, &lokstraauth.LoginRequest{
     Credentials: credentials,
-    Metadata: map[string]interface{}{
+    Metadata: map[string]any{
         "ip_address": req.RemoteAddr,
         "user_agent": req.UserAgent(),
         "device_id":  req.Header.Get("X-Device-ID"),

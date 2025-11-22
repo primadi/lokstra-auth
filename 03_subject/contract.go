@@ -4,10 +4,13 @@ import (
 	"context"
 )
 
-// Subject represents an authenticated entity
+// Subject represents an authenticated entity within a tenant
 type Subject struct {
 	// ID is the unique identifier for the subject
 	ID string
+
+	// TenantID is the tenant this subject belongs to (REQUIRED)
+	TenantID string
 
 	// Type indicates the subject type (e.g., "user", "service", "device")
 	Type string
@@ -19,18 +22,27 @@ type Subject struct {
 	Attributes map[string]any
 }
 
-// IdentityContext represents the complete identity context
+// IdentityContext represents the complete identity context for multi-tenant apps
 type IdentityContext struct {
 	// Subject is the authenticated subject
 	Subject *Subject
 
-	// Roles contains the subject's roles
+	// TenantID is the tenant context (copied from Subject)
+	TenantID string
+
+	// AppID is the app context this identity is valid for
+	AppID string
+
+	// BranchID is the branch context (optional, for branch-scoped operations)
+	BranchID string
+
+	// Roles contains the subject's roles (scoped to tenant+app)
 	Roles []string
 
-	// Permissions contains the subject's permissions
+	// Permissions contains the subject's permissions (scoped to tenant+app)
 	Permissions []string
 
-	// Groups contains the subject's group memberships
+	// Groups contains the subject's group memberships (scoped to tenant)
 	Groups []string
 
 	// Profile contains additional profile information
@@ -116,28 +128,28 @@ type IdentityContextBuilder interface {
 	Build(ctx context.Context, subject *Subject) (*IdentityContext, error)
 }
 
-// RoleProvider provides roles for a subject
+// RoleProvider provides roles for a subject within tenant+app context
 type RoleProvider interface {
-	// GetRoles retrieves roles for a subject
-	GetRoles(ctx context.Context, subject *Subject) ([]string, error)
+	// GetRoles retrieves roles for a subject in a specific tenant and app
+	GetRoles(ctx context.Context, tenantID, appID string, subject *Subject) ([]string, error)
 }
 
-// PermissionProvider provides permissions for a subject
+// PermissionProvider provides permissions for a subject within tenant+app context
 type PermissionProvider interface {
-	// GetPermissions retrieves permissions for a subject
-	GetPermissions(ctx context.Context, subject *Subject) ([]string, error)
+	// GetPermissions retrieves permissions for a subject in a specific tenant and app
+	GetPermissions(ctx context.Context, tenantID, appID string, subject *Subject) ([]string, error)
 }
 
-// GroupProvider provides group memberships for a subject
+// GroupProvider provides group memberships for a subject within tenant context
 type GroupProvider interface {
-	// GetGroups retrieves groups for a subject
-	GetGroups(ctx context.Context, subject *Subject) ([]string, error)
+	// GetGroups retrieves groups for a subject in a specific tenant
+	GetGroups(ctx context.Context, tenantID string, subject *Subject) ([]string, error)
 }
 
 // ProfileProvider provides profile information for a subject
 type ProfileProvider interface {
-	// GetProfile retrieves profile information for a subject
-	GetProfile(ctx context.Context, subject *Subject) (map[string]any, error)
+	// GetProfile retrieves profile information for a subject in a specific tenant
+	GetProfile(ctx context.Context, tenantID string, subject *Subject) (map[string]any, error)
 }
 
 // DataEnricher enriches identity context with additional data
@@ -146,19 +158,19 @@ type DataEnricher interface {
 	Enrich(ctx context.Context, identity *IdentityContext) error
 }
 
-// IdentityStore stores and retrieves identity contexts
+// IdentityStore stores and retrieves identity contexts with tenant isolation
 type IdentityStore interface {
 	// Store saves an identity context
-	Store(ctx context.Context, sessionID string, identity *IdentityContext) error
+	Store(ctx context.Context, tenantID, sessionID string, identity *IdentityContext) error
 
 	// Get retrieves an identity context
-	Get(ctx context.Context, sessionID string) (*IdentityContext, error)
+	Get(ctx context.Context, tenantID, sessionID string) (*IdentityContext, error)
 
 	// Delete removes an identity context
-	Delete(ctx context.Context, sessionID string) error
+	Delete(ctx context.Context, tenantID, sessionID string) error
 
 	// Update updates an identity context
-	Update(ctx context.Context, sessionID string, identity *IdentityContext) error
+	Update(ctx context.Context, tenantID, sessionID string, identity *IdentityContext) error
 }
 
 // IdentityCache caches identity contexts for performance

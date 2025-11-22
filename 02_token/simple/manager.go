@@ -84,6 +84,17 @@ func NewManager(config *Config) *Manager {
 
 // Generate creates a new opaque token from the provided claims
 func (m *Manager) Generate(ctx context.Context, claims token.Claims) (*token.Token, error) {
+	// Validate required multi-tenant claims
+	tenantID, hasTenant := claims.GetTenantID()
+	if !hasTenant || tenantID == "" {
+		return nil, errors.New("tenant_id is required in claims")
+	}
+
+	appID, hasApp := claims.GetAppID()
+	if !hasApp || appID == "" {
+		return nil, errors.New("app_id is required in claims")
+	}
+
 	// Generate random token
 	tokenBytes := make([]byte, m.config.TokenLength)
 	if _, err := rand.Read(tokenBytes); err != nil {
@@ -103,6 +114,8 @@ func (m *Manager) Generate(ctx context.Context, claims token.Claims) (*token.Tok
 	return &token.Token{
 		Value:     tokenValue,
 		Type:      "Bearer",
+		TenantID:  tenantID,
+		AppID:     appID,
 		ExpiresAt: expiresAt,
 		IssuedAt:  now,
 		Metadata: map[string]any{
@@ -156,11 +169,30 @@ func (m *Manager) Verify(ctx context.Context, tokenValue string) (*token.Verific
 		}
 	}
 
+	// Validate multi-tenant required claims
+	tenantID, hasTenant := claims.GetTenantID()
+	if !hasTenant || tenantID == "" {
+		return &token.VerificationResult{
+			Valid: false,
+			Error: errors.New("token missing tenant_id claim"),
+		}, nil
+	}
+
+	appID, hasApp := claims.GetAppID()
+	if !hasApp || appID == "" {
+		return &token.VerificationResult{
+			Valid: false,
+			Error: errors.New("token missing app_id claim"),
+		}, nil
+	}
+
 	return &token.VerificationResult{
 		Valid:  true,
 		Claims: claims,
 		Metadata: map[string]any{
 			"token_type": "opaque",
+			"tenant_id":  tenantID,
+			"app_id":     appID,
 		},
 	}, nil
 }

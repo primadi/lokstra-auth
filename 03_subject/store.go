@@ -131,8 +131,8 @@ func (s *InMemoryIdentityStore) ListSessions(ctx context.Context) ([]string, err
 	return sessions, nil
 }
 
-// ListBySubject lists all sessions for a subject
-func (s *InMemoryIdentityStore) ListBySubject(ctx context.Context, subjectID string) ([]*IdentityContext, error) {
+// ListBySubject lists all sessions for a subject within a tenant
+func (s *InMemoryIdentityStore) ListBySubject(ctx context.Context, tenantID, subjectID string) ([]*IdentityContext, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -147,8 +147,10 @@ func (s *InMemoryIdentityStore) ListBySubject(ctx context.Context, subjectID str
 			}
 		}
 
-		// Check if subject matches
-		if identity.Subject != nil && identity.Subject.ID == subjectID {
+		// Check if tenant and subject match
+		if identity.Subject != nil &&
+			identity.Subject.ID == subjectID &&
+			identity.Subject.TenantID == tenantID {
 			identities = append(identities, identity)
 		}
 	}
@@ -156,15 +158,17 @@ func (s *InMemoryIdentityStore) ListBySubject(ctx context.Context, subjectID str
 	return identities, nil
 }
 
-// DeleteBySubject deletes all sessions for a subject
-func (s *InMemoryIdentityStore) DeleteBySubject(ctx context.Context, subjectID string) error {
+// DeleteBySubject deletes all sessions for a subject within a tenant
+func (s *InMemoryIdentityStore) DeleteBySubject(ctx context.Context, tenantID, subjectID string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	sessionsToDelete := make([]string, 0)
 
 	for sessionID, identity := range s.identities {
-		if identity.Subject != nil && identity.Subject.ID == subjectID {
+		if identity.Subject != nil &&
+			identity.Subject.ID == subjectID &&
+			identity.Subject.TenantID == tenantID {
 			sessionsToDelete = append(sessionsToDelete, sessionID)
 		}
 	}
