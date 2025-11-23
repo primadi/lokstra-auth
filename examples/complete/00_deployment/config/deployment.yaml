@@ -1,10 +1,11 @@
 # yaml-language-server: $schema=https://primadi.github.io/lokstra/schema/lokstra.schema.json
 
 configs:
+  server: ${SERVER:monolith.auth-server}  # Deployment mode: monolith, microservices, development
   # Global Database configuration
   global-db:
-    dsn: "postgres://user:password@localhost:5432/lokstra_db"
-    schema: "public"
+    dsn: "postgres://postgres:adm1n@localhost:5432/lokstra_db?sslmode=disable"
+    schema: "lokstra_auth"
 
 service-definitions:
   global-db:
@@ -31,11 +32,11 @@ deployments:
           - credential-config-service
           
           # 01_credential - Authentication
-          - basic-auth-service
-          - apikey-auth-service
-          - oauth2-auth-service
-          - passwordless-auth-service
-          - passkey-auth-service
+          # - basic-auth-service
+          # - apikey-auth-service
+          # - oauth2-auth-service
+          # - passwordless-auth-service
+          # - passkey-auth-service
           
           # 02_token - Token Management (future)
           # - token-service

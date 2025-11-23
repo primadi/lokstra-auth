@@ -11,7 +11,7 @@ import (
 )
 
 // AppService manages app lifecycle and operations within tenants
-// @RouterService name="app-service", prefix="/api/registration/tenants/{tenant_id}/apps", middlewares=["recovery", "request-logger"]
+// @RouterService name="app-service", prefix="/api/registration/tenants/{tenant_id}/apps", middlewares=["recovery", "request_logger"]
 type AppService struct {
 	// @Inject "app-store"
 	Store *service.Cached[repository.AppStore]

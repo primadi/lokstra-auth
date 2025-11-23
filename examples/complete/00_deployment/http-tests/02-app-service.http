@@ -1,0 +1,47 @@
+### App Service API Tests
+@baseUrl = http://localhost:8080
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+
+### 1. Create App
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps
+Content-Type: {{contentType}}
+
+{
+  "id": "main-app",
+  "name": "Main Application",
+  "type": "web",
+  "config": {
+    "access_token_expiry": 3600000000000,
+    "refresh_token_expiry": 86400000000000,
+    "token_algorithm": "HS256"
+  }
+}
+
+### 2. Get App by ID
+# @name getApp
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}
+
+### 3. Get App by Code
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/code/main-app
+
+### 4. List All Apps for Tenant
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps
+
+### 5. Update App
+PUT {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Main Application Updated",
+  "description": "Updated primary application",
+  "settings": {
+    "enable_oauth2": true,
+    "enable_api_keys": true,
+    "enable_passkey": true
+  }
+}
+
+### 6. Delete App
+DELETE {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}

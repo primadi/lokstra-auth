@@ -11,7 +11,7 @@ import (
 )
 
 // BranchService manages branch lifecycle and operations within apps
-// @RouterService name="branch-service", prefix="/api/registration/tenants/{tenant_id}/apps/{app_id}/branches", middlewares=["recovery", "request-logger"]
+// @RouterService name="branch-service", prefix="/api/registration/tenants/{tenant_id}/apps/{app_id}/branches", middlewares=["recovery", "request_logger"]
 type BranchService struct {
 	// @Inject "branch-store"
 	Store *service.Cached[repository.BranchStore]

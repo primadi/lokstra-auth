@@ -1,0 +1,62 @@
+### Branch Service API Tests
+@baseUrl = http://localhost:8080
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+@branchId = hq-jakarta
+
+### 1. Create Branch (Headquarters)
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches
+Content-Type: {{contentType}}
+
+{
+  "branch_id": "hq-jakarta",
+  "name": "Headquarters Jakarta",
+  "type": "headquarters",
+  "settings": {
+    "timezone": "Asia/Jakarta",
+    "currency": "IDR",
+    "language": "id"
+  }
+}
+
+### 2. Create Regional Branch (Surabaya)
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches
+Content-Type: {{contentType}}
+
+{
+  "branch_id": "regional-surabaya",
+  "name": "Regional Office Surabaya",
+  "type": "regional",
+  "settings": {
+    "timezone": "Asia/Jakarta",
+    "currency": "IDR",
+    "language": "id"
+  }
+}
+
+### 3. Get Branch by ID
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}
+
+### 4. Get Branch by Code
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/code/hq-jakarta
+
+### 5. List All Branches for App
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches
+
+### 6. Update Branch
+PUT {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Production Updated",
+  "description": "Updated production environment",
+  "settings": {
+    "environment": "production",
+    "debug_mode": false,
+    "rate_limit": 1000
+  }
+}
+
+### 7. Delete Branch
+DELETE {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}

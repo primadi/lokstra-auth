@@ -1,0 +1,165 @@
+### Complete Workflow - Step by Step Testing
+### Follow this workflow to test the entire system in order
+
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+################################################################################
+### STEP 1: Create Tenant
+################################################################################
+# @name createTenant
+POST {{baseUrl}}/api/v1/tenants
+Content-Type: {{contentType}}
+
+{
+  "id": "acme-corp",
+  "name": "Acme Corporation",
+  "db_dsn": "postgres://postgres:adm1n@localhost:5432/lokstra_db?sslmode=disable",
+  "db_schema": "acme_corp",
+  "settings": {
+    "max_users": 100,
+    "max_apps": 10
+  }
+}
+
+@tenantId = acme-corp
+
+################################################################################
+### STEP 2: Create App
+################################################################################
+# @name createApp
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps
+Content-Type: {{contentType}}
+
+{
+  "id": "main-app",
+  "name": "Main Application",
+  "type": "web",
+  "config": {
+    "access_token_expiry": 3600000000000,
+    "refresh_token_expiry": 86400000000000,
+    "token_algorithm": "HS256"
+  }
+}
+
+@appId = main-app
+
+################################################################################
+### STEP 3: Create Branch
+################################################################################
+# @name createBranch
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches
+Content-Type: {{contentType}}
+
+{
+  "branch_id": "hq-jakarta",
+  "name": "Headquarters Jakarta",
+  "type": "headquarters",
+  "settings": {
+    "timezone": "Asia/Jakarta",
+    "currency": "IDR",
+    "language": "id"
+  }
+}
+
+@branchId = hq-jakarta
+
+################################################################################
+### STEP 4: Create User
+################################################################################
+# @name createUser
+POST {{baseUrl}}/api/registration/tenants/{{tenantId}}/users
+Content-Type: {{contentType}}
+
+{
+  "id": "john.doe",
+  "username": "john.doe",
+  "email": "john.doe@example.com",
+  "metadata": {
+    "full_name": "John Doe",
+    "department": "Engineering",
+    "position": "Developer"
+  }
+}
+
+@userId = john.doe
+
+################################################################################
+### STEP 5: Create App Key
+################################################################################
+# @name createAppKey
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys
+Content-Type: {{contentType}}
+
+{
+  "name": "Production API Key",
+  "description": "API key for production environment",
+  "scopes": ["read", "write"],
+  "expires_at": "2026-12-31T23:59:59Z",
+  "metadata": {
+    "created_by": "admin",
+    "purpose": "production-api"
+  }
+}
+
+@appKeyId = prod-api-key-001
+# Note: @appKeyValue will be in the response - save it securely
+
+################################################################################
+### STEP 6: Create Credential Configs
+################################################################################
+
+### 6.1: Basic Auth Config
+# @name createBasicConfig
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/credential-configs
+Content-Type: {{contentType}}
+
+{
+  "credential_type": "basic",
+  "config": {
+    "hash_algorithm": "bcrypt",
+    "bcrypt_cost": 12,
+    "allow_username_login": true,
+    "allow_email_login": true,
+    "require_email_verification": false
+  },
+  "enabled": true
+}
+
+### 6.2: API Key Config
+# @name createApiKeyConfig
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/credential-configs
+Content-Type: {{contentType}}
+
+{
+  "credential_type": "apikey",
+  "config": {
+    "header_name": "X-API-Key",
+    "prefix": "ak_",
+    "key_length": 32,
+    "allow_query_param": false
+  },
+  "enabled": true
+}
+
+################################################################################
+### VERIFICATION CHECKS
+################################################################################
+
+### Verify Tenant
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}
+
+### Verify App
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}
+
+### Verify Branch
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}
+
+### Verify User
+GET {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/id/{{userId}}
+
+### Verify App Key
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys/{{appKeyId}}
+
+### Verify Credential Configs
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/credential-configs

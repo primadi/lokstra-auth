@@ -5,6 +5,10 @@
 package application
 
 import (
+	"github.com/primadi/lokstra/core/deploy"
+	"github.com/primadi/lokstra/core/proxy"
+	"github.com/primadi/lokstra/lokstra_registry"
+	"github.com/primadi/lokstra/core/service"
 	domain "github.com/primadi/lokstra-auth/01_credential/domain"
 	apikey "github.com/primadi/lokstra-auth/01_credential/domain/apikey"
 	basic "github.com/primadi/lokstra-auth/01_credential/domain/basic"
@@ -12,104 +16,18 @@ import (
 	passkey "github.com/primadi/lokstra-auth/01_credential/domain/passkey"
 	passwordless "github.com/primadi/lokstra-auth/01_credential/domain/passwordless"
 	repository "github.com/primadi/lokstra-auth/01_credential/infrastructure/repository"
-	"github.com/primadi/lokstra/core/deploy"
-	"github.com/primadi/lokstra/core/proxy"
 	request "github.com/primadi/lokstra/core/request"
-	"github.com/primadi/lokstra/core/service"
-	"github.com/primadi/lokstra/lokstra_registry"
 )
 
 // Auto-register on package import
 func init() {
-	RegisterBasicAuthService()
 	RegisterAPIKeyAuthService()
+	RegisterBasicAuthService()
 	RegisterOAuth2AuthService()
-	RegisterPasswordlessAuthService()
 	RegisterPasskeyAuthService()
+	RegisterPasswordlessAuthService()
 }
 
-// ============================================================
-// FILE: basic_service.go
-// ============================================================
-
-// BasicAuthServiceRemote implements BasicAuthServiceInterface with HTTP proxy
-// Auto-generated from BasicAuthService interface methods
-type BasicAuthServiceRemote struct {
-	proxyService *proxy.Service
-}
-
-// NewBasicAuthServiceRemote creates a new remote basic-auth-service proxy
-func NewBasicAuthServiceRemote(proxyService *proxy.Service) *BasicAuthServiceRemote {
-	return &BasicAuthServiceRemote{
-		proxyService: proxyService,
-	}
-}
-
-// ChangePassword via HTTP
-// Generated from: @Route "POST /change-password"
-func (s *BasicAuthServiceRemote) ChangePassword(p *request.Context) error {
-	return proxy.Call(s.proxyService, "ChangePassword", p)
-}
-
-// Login via HTTP
-// Generated from: @Route "POST /login"
-func (s *BasicAuthServiceRemote) Login(p *request.Context) (*basic.LoginResponse, error) {
-	return proxy.CallWithData[*basic.LoginResponse](s.proxyService, "Login", p)
-}
-
-// Register via HTTP
-// Generated from: @Route "POST /register"
-func (s *BasicAuthServiceRemote) Register(p *request.Context) (*basic.RegisterResponse, error) {
-	return proxy.CallWithData[*basic.RegisterResponse](s.proxyService, "Register", p)
-}
-
-func BasicAuthServiceFactory(deps map[string]any, config map[string]any) any {
-	return &BasicAuthService{
-		Authenticator:  service.Cast[domain.Authenticator](deps["basic-authenticator"]),
-		ConfigResolver: service.Cast[*ConfigResolver](deps["credential-config-resolver"]),
-		Validator:      service.Cast[repository.CredentialValidator](deps["credential-validator"]),
-		UserProvider:   service.Cast[repository.UserProvider](deps["user-provider"]),
-	}
-}
-
-// BasicAuthServiceRemoteFactory creates a remote HTTP client for BasicAuthServiceInterface
-// Auto-generated from @RouterService annotation
-func BasicAuthServiceRemoteFactory(deps, config map[string]any) any {
-	proxyService, ok := config["remote"].(*proxy.Service)
-	if !ok {
-		panic("remote factory requires 'remote' (proxy.Service) in config")
-	}
-	return NewBasicAuthServiceRemote(proxyService)
-}
-
-// RegisterBasicAuthService registers the basic-auth-service with the registry
-// Auto-generated from annotations:
-//   - @RouterService name="basic-auth-service", prefix="/api/cred/basic"
-//   - @Inject annotations
-//   - @Route annotations on methods
-func RegisterBasicAuthService() {
-	// Register service type with router configuration
-	lokstra_registry.RegisterServiceType("basic-auth-service-factory",
-		BasicAuthServiceFactory,
-		BasicAuthServiceRemoteFactory,
-		deploy.WithRouter(&deploy.ServiceTypeRouter{
-			PathPrefix:  "/api/cred/basic",
-			Middlewares: []string{"recovery", "request-logger"},
-			CustomRoutes: map[string]string{
-				"ChangePassword": "POST /change-password",
-				"Login":          "POST /login",
-				"Register":       "POST /register",
-			},
-		}),
-	)
-
-	// Register lazy service with auto-detected dependencies
-	lokstra_registry.RegisterLazyService("basic-auth-service",
-		"basic-auth-service-factory",
-		map[string]any{
-			"depends-on": []string{"basic-authenticator", "credential-config-resolver", "credential-validator", "user-provider"},
-		})
-}
 
 // ============================================================
 // FILE: apikey_service.go
@@ -128,16 +46,19 @@ func NewAPIKeyAuthServiceRemote(proxyService *proxy.Service) *APIKeyAuthServiceR
 	}
 }
 
+
 // Authenticate via HTTP
 // Generated from: @Route "POST /authenticate"
 func (s *APIKeyAuthServiceRemote) Authenticate(p *request.Context) (*apikey.AuthenticateResponse, error) {
 	return proxy.CallWithData[*apikey.AuthenticateResponse](s.proxyService, "Authenticate", p)
 }
 
+
+
 func APIKeyAuthServiceFactory(deps map[string]any, config map[string]any) any {
 	return &APIKeyAuthService{
-		Authenticator:  service.Cast[domain.Authenticator](deps["apikey-authenticator"]),
-		Store:          service.Cast[repository.APIKeyStore](deps["apikey-store"]),
+		Authenticator: service.Cast[domain.Authenticator](deps["apikey-authenticator"]),
+		Store: service.Cast[repository.APIKeyStore](deps["apikey-store"]),
 		ConfigResolver: service.Cast[*ConfigResolver](deps["credential-config-resolver"]),
 	}
 }
@@ -164,9 +85,9 @@ func RegisterAPIKeyAuthService() {
 		APIKeyAuthServiceRemoteFactory,
 		deploy.WithRouter(&deploy.ServiceTypeRouter{
 			PathPrefix:  "/api/cred/apikey",
-			Middlewares: []string{"recovery", "request-logger"},
+			Middlewares: []string{ "recovery", "request-logger" },
 			CustomRoutes: map[string]string{
-				"Authenticate": "POST /authenticate",
+				"Authenticate":  "POST /authenticate",
 			},
 		}),
 	)
@@ -175,7 +96,95 @@ func RegisterAPIKeyAuthService() {
 	lokstra_registry.RegisterLazyService("apikey-auth-service",
 		"apikey-auth-service-factory",
 		map[string]any{
-			"depends-on": []string{"apikey-authenticator", "apikey-store", "credential-config-resolver"},
+			"depends-on": []string{ "apikey-authenticator", "apikey-store", "credential-config-resolver",  },
+		})
+}
+
+// ============================================================
+// FILE: basic_service.go
+// ============================================================
+
+// BasicAuthServiceRemote implements BasicAuthServiceInterface with HTTP proxy
+// Auto-generated from BasicAuthService interface methods
+type BasicAuthServiceRemote struct {
+	proxyService *proxy.Service
+}
+
+// NewBasicAuthServiceRemote creates a new remote basic-auth-service proxy
+func NewBasicAuthServiceRemote(proxyService *proxy.Service) *BasicAuthServiceRemote {
+	return &BasicAuthServiceRemote{
+		proxyService: proxyService,
+	}
+}
+
+
+// ChangePassword via HTTP
+// Generated from: @Route "POST /change-password"
+func (s *BasicAuthServiceRemote) ChangePassword(p *request.Context) error {
+	return proxy.Call(s.proxyService, "ChangePassword", p)
+}
+
+
+// Login via HTTP
+// Generated from: @Route "POST /login"
+func (s *BasicAuthServiceRemote) Login(p *request.Context) (*basic.LoginResponse, error) {
+	return proxy.CallWithData[*basic.LoginResponse](s.proxyService, "Login", p)
+}
+
+
+// Register via HTTP
+// Generated from: @Route "POST /register"
+func (s *BasicAuthServiceRemote) Register(p *request.Context) (*basic.RegisterResponse, error) {
+	return proxy.CallWithData[*basic.RegisterResponse](s.proxyService, "Register", p)
+}
+
+
+
+func BasicAuthServiceFactory(deps map[string]any, config map[string]any) any {
+	return &BasicAuthService{
+		Authenticator: service.Cast[domain.Authenticator](deps["basic-authenticator"]),
+		ConfigResolver: service.Cast[*ConfigResolver](deps["credential-config-resolver"]),
+		Validator: service.Cast[repository.CredentialValidator](deps["credential-validator"]),
+		UserProvider: service.Cast[repository.UserProvider](deps["user-provider"]),
+	}
+}
+
+// BasicAuthServiceRemoteFactory creates a remote HTTP client for BasicAuthServiceInterface
+// Auto-generated from @RouterService annotation
+func BasicAuthServiceRemoteFactory(deps, config map[string]any) any {
+	proxyService, ok := config["remote"].(*proxy.Service)
+	if !ok {
+		panic("remote factory requires 'remote' (proxy.Service) in config")
+	}
+	return NewBasicAuthServiceRemote(proxyService)
+}
+
+// RegisterBasicAuthService registers the basic-auth-service with the registry
+// Auto-generated from annotations:
+//   - @RouterService name="basic-auth-service", prefix="/api/cred/basic"
+//   - @Inject annotations
+//   - @Route annotations on methods
+func RegisterBasicAuthService() {
+	// Register service type with router configuration
+	lokstra_registry.RegisterServiceType("basic-auth-service-factory",
+		BasicAuthServiceFactory,
+		BasicAuthServiceRemoteFactory,
+		deploy.WithRouter(&deploy.ServiceTypeRouter{
+			PathPrefix:  "/api/cred/basic",
+			Middlewares: []string{ "recovery", "request-logger" },
+			CustomRoutes: map[string]string{
+				"ChangePassword":  "POST /change-password",
+				"Login":  "POST /login",
+				"Register":  "POST /register",
+			},
+		}),
+	)
+
+	// Register lazy service with auto-detected dependencies
+	lokstra_registry.RegisterLazyService("basic-auth-service",
+		"basic-auth-service-factory",
+		map[string]any{
+			"depends-on": []string{ "basic-authenticator", "credential-config-resolver", "credential-validator", "user-provider",  },
 		})
 }
 
@@ -196,11 +205,13 @@ func NewOAuth2AuthServiceRemote(proxyService *proxy.Service) *OAuth2AuthServiceR
 	}
 }
 
+
 // Authorize via HTTP
 // Generated from: @Route "POST /authorize"
 func (s *OAuth2AuthServiceRemote) Authorize(p *request.Context) (*oauth2.AuthorizeResponse, error) {
 	return proxy.CallWithData[*oauth2.AuthorizeResponse](s.proxyService, "Authorize", p)
 }
+
 
 // Callback via HTTP
 // Generated from: @Route "GET /callback"
@@ -208,8 +219,11 @@ func (s *OAuth2AuthServiceRemote) Callback(p *request.Context) (*oauth2.LoginRes
 	return proxy.CallWithData[*oauth2.LoginResponse](s.proxyService, "Callback", p)
 }
 
+
+
 func OAuth2AuthServiceFactory(deps map[string]any, config map[string]any) any {
-	return &OAuth2AuthService{}
+	return &OAuth2AuthService{
+	}
 }
 
 // OAuth2AuthServiceRemoteFactory creates a remote HTTP client for OAuth2AuthServiceInterface
@@ -234,9 +248,9 @@ func RegisterOAuth2AuthService() {
 		OAuth2AuthServiceRemoteFactory,
 		deploy.WithRouter(&deploy.ServiceTypeRouter{
 			PathPrefix:  "/api/cred/oauth2",
-			Middlewares: []string{"recovery", "request-logger"},
+			Middlewares: []string{ "recovery", "request-logger" },
 			CustomRoutes: map[string]string{
-				"Authorize": "POST /authorize",
+				"Authorize":  "POST /authorize",
 				"Callback":  "GET /callback",
 			},
 		}),
@@ -246,7 +260,7 @@ func RegisterOAuth2AuthService() {
 	lokstra_registry.RegisterLazyService("oauth2-auth-service",
 		"oauth2-auth-service-factory",
 		map[string]any{
-			"depends-on": []string{},
+			"depends-on": []string{  },
 		})
 }
 
@@ -267,11 +281,13 @@ func NewPasskeyAuthServiceRemote(proxyService *proxy.Service) *PasskeyAuthServic
 	}
 }
 
+
 // BeginAuthentication via HTTP
 // Generated from: @Route "POST /authenticate/begin"
 func (s *PasskeyAuthServiceRemote) BeginAuthentication(p *request.Context) (*passkey.BeginAuthenticationResponse, error) {
 	return proxy.CallWithData[*passkey.BeginAuthenticationResponse](s.proxyService, "BeginAuthentication", p)
 }
+
 
 // BeginRegistration via HTTP
 // Generated from: @Route "POST /register/begin"
@@ -279,11 +295,13 @@ func (s *PasskeyAuthServiceRemote) BeginRegistration(p *request.Context) (*passk
 	return proxy.CallWithData[*passkey.BeginRegistrationResponse](s.proxyService, "BeginRegistration", p)
 }
 
+
 // DeleteCredential via HTTP
 // Generated from: @Route "DELETE /credentials/{credential_id}"
 func (s *PasskeyAuthServiceRemote) DeleteCredential(p *request.Context) error {
 	return proxy.Call(s.proxyService, "DeleteCredential", p)
 }
+
 
 // FinishAuthentication via HTTP
 // Generated from: @Route "POST /authenticate/finish"
@@ -291,11 +309,13 @@ func (s *PasskeyAuthServiceRemote) FinishAuthentication(p *request.Context) (*pa
 	return proxy.CallWithData[*passkey.FinishAuthenticationResponse](s.proxyService, "FinishAuthentication", p)
 }
 
+
 // FinishRegistration via HTTP
 // Generated from: @Route "POST /register/finish"
 func (s *PasskeyAuthServiceRemote) FinishRegistration(p *request.Context) (*passkey.FinishRegistrationResponse, error) {
 	return proxy.CallWithData[*passkey.FinishRegistrationResponse](s.proxyService, "FinishRegistration", p)
 }
+
 
 // ListCredentials via HTTP
 // Generated from: @Route "GET /credentials/{user_id}"
@@ -303,8 +323,11 @@ func (s *PasskeyAuthServiceRemote) ListCredentials(p *request.Context) ([]passke
 	return proxy.CallWithData[[]passkey.PasskeyCredential](s.proxyService, "ListCredentials", p)
 }
 
+
+
 func PasskeyAuthServiceFactory(deps map[string]any, config map[string]any) any {
-	return &PasskeyAuthService{}
+	return &PasskeyAuthService{
+	}
 }
 
 // PasskeyAuthServiceRemoteFactory creates a remote HTTP client for PasskeyAuthServiceInterface
@@ -329,14 +352,14 @@ func RegisterPasskeyAuthService() {
 		PasskeyAuthServiceRemoteFactory,
 		deploy.WithRouter(&deploy.ServiceTypeRouter{
 			PathPrefix:  "/api/cred/passkey",
-			Middlewares: []string{"recovery", "request-logger"},
+			Middlewares: []string{ "recovery", "request-logger" },
 			CustomRoutes: map[string]string{
 				"BeginAuthentication":  "POST /authenticate/begin",
-				"BeginRegistration":    "POST /register/begin",
-				"DeleteCredential":     "DELETE /credentials/{credential_id}",
-				"FinishAuthentication": "POST /authenticate/finish",
-				"FinishRegistration":   "POST /register/finish",
-				"ListCredentials":      "GET /credentials/{user_id}",
+				"BeginRegistration":  "POST /register/begin",
+				"DeleteCredential":  "DELETE /credentials/{credential_id}",
+				"FinishAuthentication":  "POST /authenticate/finish",
+				"FinishRegistration":  "POST /register/finish",
+				"ListCredentials":  "GET /credentials/{user_id}",
 			},
 		}),
 	)
@@ -345,7 +368,7 @@ func RegisterPasskeyAuthService() {
 	lokstra_registry.RegisterLazyService("passkey-auth-service",
 		"passkey-auth-service-factory",
 		map[string]any{
-			"depends-on": []string{},
+			"depends-on": []string{  },
 		})
 }
 
@@ -366,11 +389,13 @@ func NewPasswordlessAuthServiceRemote(proxyService *proxy.Service) *Passwordless
 	}
 }
 
+
 // ResendCode via HTTP
 // Generated from: @Route "POST /resend-code"
 func (s *PasswordlessAuthServiceRemote) ResendCode(p *request.Context) (*passwordless.SendCodeResponse, error) {
 	return proxy.CallWithData[*passwordless.SendCodeResponse](s.proxyService, "ResendCode", p)
 }
+
 
 // SendCode via HTTP
 // Generated from: @Route "POST /send-code"
@@ -378,11 +403,13 @@ func (s *PasswordlessAuthServiceRemote) SendCode(p *request.Context) (*passwordl
 	return proxy.CallWithData[*passwordless.SendCodeResponse](s.proxyService, "SendCode", p)
 }
 
+
 // SendMagicLink via HTTP
 // Generated from: @Route "POST /send-magic-link"
 func (s *PasswordlessAuthServiceRemote) SendMagicLink(p *request.Context) (*passwordless.SendMagicLinkResponse, error) {
 	return proxy.CallWithData[*passwordless.SendMagicLinkResponse](s.proxyService, "SendMagicLink", p)
 }
+
 
 // VerifyCode via HTTP
 // Generated from: @Route "POST /verify-code"
@@ -390,14 +417,18 @@ func (s *PasswordlessAuthServiceRemote) VerifyCode(p *request.Context) (*passwor
 	return proxy.CallWithData[*passwordless.VerifyCodeResponse](s.proxyService, "VerifyCode", p)
 }
 
+
 // VerifyMagicLink via HTTP
 // Generated from: @Route "GET /verify-magic-link/{token}"
 func (s *PasswordlessAuthServiceRemote) VerifyMagicLink(p *request.Context) (*passwordless.VerifyMagicLinkResponse, error) {
 	return proxy.CallWithData[*passwordless.VerifyMagicLinkResponse](s.proxyService, "VerifyMagicLink", p)
 }
 
+
+
 func PasswordlessAuthServiceFactory(deps map[string]any, config map[string]any) any {
-	return &PasswordlessAuthService{}
+	return &PasswordlessAuthService{
+	}
 }
 
 // PasswordlessAuthServiceRemoteFactory creates a remote HTTP client for PasswordlessAuthServiceInterface
@@ -422,13 +453,13 @@ func RegisterPasswordlessAuthService() {
 		PasswordlessAuthServiceRemoteFactory,
 		deploy.WithRouter(&deploy.ServiceTypeRouter{
 			PathPrefix:  "/api/cred/passwordless",
-			Middlewares: []string{"recovery", "request-logger"},
+			Middlewares: []string{ "recovery", "request-logger" },
 			CustomRoutes: map[string]string{
-				"ResendCode":      "POST /resend-code",
-				"SendCode":        "POST /send-code",
-				"SendMagicLink":   "POST /send-magic-link",
-				"VerifyCode":      "POST /verify-code",
-				"VerifyMagicLink": "GET /verify-magic-link/{token}",
+				"ResendCode":  "POST /resend-code",
+				"SendCode":  "POST /send-code",
+				"SendMagicLink":  "POST /send-magic-link",
+				"VerifyCode":  "POST /verify-code",
+				"VerifyMagicLink":  "GET /verify-magic-link/{token}",
 			},
 		}),
 	)
@@ -437,6 +468,8 @@ func RegisterPasswordlessAuthService() {
 	lokstra_registry.RegisterLazyService("passwordless-auth-service",
 		"passwordless-auth-service-factory",
 		map[string]any{
-			"depends-on": []string{},
+			"depends-on": []string{  },
 		})
 }
+
+

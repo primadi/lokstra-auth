@@ -4,7 +4,7 @@ go 1.25.2
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/primadi/lokstra v0.4.4
+	github.com/primadi/lokstra v0.4.6
 	golang.org/x/crypto v0.45.0
 )
 

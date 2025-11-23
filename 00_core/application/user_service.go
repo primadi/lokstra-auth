@@ -11,7 +11,7 @@ import (
 )
 
 // UserService manages user lifecycle and operations within tenants
-// @RouterService name="user-service", prefix="/api/registration/tenants/{tenant_id}/users", middlewares=["recovery", "request-logger"]
+// @RouterService name="user-service", prefix="/api/registration/tenants/{tenant_id}/users", middlewares=["recovery", "request_logger"]
 type UserService struct {
 	// @Inject "user-store"
 	Store *service.Cached[repository.UserStore]
@@ -77,7 +77,7 @@ func (s *UserService) CreateUser(ctx *request.Context, req *domain.CreateUserReq
 }
 
 // GetUser retrieves a user by ID within a tenant
-// @Route "GET /{id}"
+// @Route "GET /id/{id}"
 func (s *UserService) GetUser(ctx *request.Context, req *domain.GetUserRequest) (*domain.User, error) {
 	user, err := s.Store.MustGet().Get(ctx, req.TenantID, req.ID)
 	if err != nil {
@@ -110,7 +110,7 @@ func (s *UserService) GetUserByEmail(ctx *request.Context, req *domain.GetUserBy
 }
 
 // UpdateUser updates an existing user
-// @Route "PUT /{id}"
+// @Route "PUT /id/{id}"
 func (s *UserService) UpdateUser(ctx *request.Context, req *domain.UpdateUserRequest) error {
 	// Check if user exists
 	dUser, err := s.Store.MustGet().Get(ctx, req.TenantID, req.ID)
@@ -157,7 +157,7 @@ func (s *UserService) UpdateUser(ctx *request.Context, req *domain.UpdateUserReq
 }
 
 // DeleteUser deletes a user
-// @Route "DELETE /{id}"
+// @Route "DELETE /id/{id}"
 func (s *UserService) DeleteUser(ctx *request.Context, req *domain.DeleteUserRequest) error {
 	// Check if user exists
 	exists, err := s.Store.MustGet().Exists(ctx, req.TenantID, req.ID)
@@ -189,7 +189,7 @@ func (s *UserService) ListUsers(ctx *request.Context, req *domain.ListUsersReque
 
 // AssignUserToApp grants a user access to an app
 // Authorization (roles, permissions) will be managed separately in 04_authz layer
-// @Route "POST /{user_id}/assign-app"
+// @Route "POST /id/{user_id}/assign-app"
 func (s *UserService) AssignUserToApp(ctx *request.Context, req *domain.AssignUserToAppRequest) error {
 	// Verify user exists
 	_, err := s.Store.MustGet().Get(ctx, req.TenantID, req.UserID)
@@ -224,7 +224,7 @@ func (s *UserService) AssignUserToApp(ctx *request.Context, req *domain.AssignUs
 }
 
 // RemoveUserFromApp revokes a user's access from an app
-// @Route "DELETE /{user_id}/remove-app"
+// @Route "DELETE /id/{user_id}/remove-app"
 func (s *UserService) RemoveUserFromApp(ctx *request.Context, req *domain.RemoveUserFromAppRequest) error {
 	// Check if access exists
 	hasAccess, err := s.UserAppStore.MustGet().HasAccess(ctx, req.TenantID, req.AppID, req.UserID)
@@ -244,7 +244,7 @@ func (s *UserService) RemoveUserFromApp(ctx *request.Context, req *domain.Remove
 }
 
 // ListUserApps lists all apps a user has access to
-// @Route "GET /{user_id}/apps"
+// @Route "GET /id/{user_id}/apps"
 func (s *UserService) ListUserApps(ctx *request.Context, req *domain.GetUserRequest) ([]string, error) {
 	appIDs, err := s.UserAppStore.MustGet().ListUserApps(ctx, req.TenantID, req.ID)
 	if err != nil {
@@ -255,7 +255,7 @@ func (s *UserService) ListUserApps(ctx *request.Context, req *domain.GetUserRequ
 }
 
 // ActivateUser activates a user
-// @Route "POST /{id}/activate"
+// @Route "POST /id/{id}/activate"
 func (s *UserService) ActivateUser(ctx *request.Context, req *domain.ActivateUserRequest) error {
 	user, err := s.Store.MustGet().Get(ctx, req.TenantID, req.ID)
 	if err != nil {
@@ -273,7 +273,7 @@ func (s *UserService) ActivateUser(ctx *request.Context, req *domain.ActivateUse
 }
 
 // SuspendUser suspends a user
-// @Route "POST /{id}/suspend"
+// @Route "POST /id/{id}/suspend"
 func (s *UserService) SuspendUser(ctx *request.Context, req *domain.SuspendUserRequest) error {
 	user, err := s.Store.MustGet().Get(ctx, req.TenantID, req.ID)
 	if err != nil {

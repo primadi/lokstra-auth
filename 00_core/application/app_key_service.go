@@ -12,7 +12,7 @@ import (
 )
 
 // AppKeyService manages API keys for service-to-service authentication
-// @RouterService name="app-key-service", prefix="/api/registration/tenants/{tenant_id}/apps/{app_id}/keys", middlewares=["recovery", "request-logger"]
+// @RouterService name="app-key-service", prefix="/api/registration/tenants/{tenant_id}/apps/{app_id}/keys", middlewares=["recovery", "request_logger"]
 type AppKeyService struct {
 	// @Inject "app-key-store"
 	Store *service.Cached[repository.AppKeyStore]

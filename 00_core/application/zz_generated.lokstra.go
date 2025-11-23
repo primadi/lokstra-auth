@@ -7,8 +7,8 @@ package application
 import (
 	"github.com/primadi/lokstra/core/deploy"
 	"github.com/primadi/lokstra/core/proxy"
-	"github.com/primadi/lokstra/lokstra_registry"
 	"github.com/primadi/lokstra/core/service"
+	"github.com/primadi/lokstra/lokstra_registry"
 	domain "github.com/primadi/lokstra-auth/00_core/domain"
 	repository "github.com/primadi/lokstra-auth/00_core/infrastructure/repository"
 	request "github.com/primadi/lokstra/core/request"
@@ -24,6 +24,152 @@ func init() {
 	RegisterUserService()
 }
 
+// ============================================================
+// FILE: user_service.go
+// ============================================================
+
+// UserServiceRemote implements UserServiceInterface with HTTP proxy
+// Auto-generated from UserService interface methods
+type UserServiceRemote struct {
+	proxyService *proxy.Service
+}
+
+// NewUserServiceRemote creates a new remote user-service proxy
+func NewUserServiceRemote(proxyService *proxy.Service) *UserServiceRemote {
+	return &UserServiceRemote{
+		proxyService: proxyService,
+	}
+}
+
+// ActivateUser via HTTP
+// Generated from: @Route "POST /id/{id}/activate"
+func (s *UserServiceRemote) ActivateUser(p *request.Context) error {
+	return proxy.Call(s.proxyService, "ActivateUser", p)
+}
+
+// AssignUserToApp via HTTP
+// Generated from: @Route "POST /id/{user_id}/assign-app"
+func (s *UserServiceRemote) AssignUserToApp(p *request.Context) error {
+	return proxy.Call(s.proxyService, "AssignUserToApp", p)
+}
+
+// CreateUser via HTTP
+// Generated from: @Route "POST /"
+func (s *UserServiceRemote) CreateUser(p *request.Context) (*domain.User, error) {
+	return proxy.CallWithData[*domain.User](s.proxyService, "CreateUser", p)
+}
+
+// DeleteUser via HTTP
+// Generated from: @Route "DELETE /id/{id}"
+func (s *UserServiceRemote) DeleteUser(p *request.Context) error {
+	return proxy.Call(s.proxyService, "DeleteUser", p)
+}
+
+// GetUser via HTTP
+// Generated from: @Route "GET /id/{id}"
+func (s *UserServiceRemote) GetUser(p *request.Context) (*domain.User, error) {
+	return proxy.CallWithData[*domain.User](s.proxyService, "GetUser", p)
+}
+
+// GetUserByEmail via HTTP
+// Generated from: @Route "GET /by-email/{email}"
+func (s *UserServiceRemote) GetUserByEmail(p *request.Context) (*domain.User, error) {
+	return proxy.CallWithData[*domain.User](s.proxyService, "GetUserByEmail", p)
+}
+
+// GetUserByUsername via HTTP
+// Generated from: @Route "GET /by-username/{username}"
+func (s *UserServiceRemote) GetUserByUsername(p *request.Context) (*domain.User, error) {
+	return proxy.CallWithData[*domain.User](s.proxyService, "GetUserByUsername", p)
+}
+
+// ListUserApps via HTTP
+// Generated from: @Route "GET /id/{user_id}/apps"
+func (s *UserServiceRemote) ListUserApps(p *request.Context) ([]string, error) {
+	return proxy.CallWithData[[]string](s.proxyService, "ListUserApps", p)
+}
+
+// ListUsers via HTTP
+// Generated from: @Route "GET /"
+func (s *UserServiceRemote) ListUsers(p *request.Context) ([]*domain.User, error) {
+	return proxy.CallWithData[[]*domain.User](s.proxyService, "ListUsers", p)
+}
+
+// RemoveUserFromApp via HTTP
+// Generated from: @Route "DELETE /id/{user_id}/remove-app"
+func (s *UserServiceRemote) RemoveUserFromApp(p *request.Context) error {
+	return proxy.Call(s.proxyService, "RemoveUserFromApp", p)
+}
+
+// SuspendUser via HTTP
+// Generated from: @Route "POST /id/{id}/suspend"
+func (s *UserServiceRemote) SuspendUser(p *request.Context) error {
+	return proxy.Call(s.proxyService, "SuspendUser", p)
+}
+
+// UpdateUser via HTTP
+// Generated from: @Route "PUT /id/{id}"
+func (s *UserServiceRemote) UpdateUser(p *request.Context) error {
+	return proxy.Call(s.proxyService, "UpdateUser", p)
+}
+
+
+func UserServiceFactory(deps map[string]any, config map[string]any) any {
+	return &UserService{
+		AppService: service.Cast[*AppService](deps["app-service"]),
+		TenantService: service.Cast[*TenantService](deps["tenant-service"]),
+		UserAppStore: service.Cast[repository.UserAppStore](deps["user-app-store"]),
+		Store: service.Cast[repository.UserStore](deps["user-store"]),
+	}
+}
+
+// UserServiceRemoteFactory creates a remote HTTP client for UserServiceInterface
+// Auto-generated from @RouterService annotation
+func UserServiceRemoteFactory(deps, config map[string]any) any {
+	proxyService, ok := config["remote"].(*proxy.Service)
+	if !ok {
+		panic("remote factory requires 'remote' (proxy.Service) in config")
+	}
+	return NewUserServiceRemote(proxyService)
+}
+
+// RegisterUserService registers the user-service with the registry
+// Auto-generated from annotations:
+//   - @RouterService name="user-service", prefix="/api/registration/tenants/{tenant_id}/users"
+//   - @Inject annotations
+//   - @Route annotations on methods
+func RegisterUserService() {
+	// Register service type with router configuration
+	lokstra_registry.RegisterServiceType("user-service-factory",
+		UserServiceFactory,
+		UserServiceRemoteFactory,
+		deploy.WithRouter(&deploy.ServiceTypeRouter{
+			PathPrefix:  "/api/registration/tenants/{tenant_id}/users",
+			Middlewares: []string{ "recovery", "request_logger" },
+			CustomRoutes: map[string]string{
+				"ActivateUser":  "POST /id/{id}/activate",
+				"AssignUserToApp":  "POST /id/{user_id}/assign-app",
+				"CreateUser":  "POST /",
+				"DeleteUser":  "DELETE /id/{id}",
+				"GetUser":  "GET /id/{id}",
+				"GetUserByEmail":  "GET /by-email/{email}",
+				"GetUserByUsername":  "GET /by-username/{username}",
+				"ListUserApps":  "GET /id/{user_id}/apps",
+				"ListUsers":  "GET /",
+				"RemoveUserFromApp":  "DELETE /id/{user_id}/remove-app",
+				"SuspendUser":  "POST /id/{id}/suspend",
+				"UpdateUser":  "PUT /id/{id}",
+			},
+		}),
+	)
+
+	// Register lazy service with auto-detected dependencies
+	lokstra_registry.RegisterLazyService("user-service",
+		"user-service-factory",
+		map[string]any{
+			"depends-on": []string{ "app-service", "tenant-service", "user-app-store", "user-store",  },
+		})
+}
 
 // ============================================================
 // FILE: app_key_service.go
@@ -42,13 +188,11 @@ func NewAppKeyServiceRemote(proxyService *proxy.Service) *AppKeyServiceRemote {
 	}
 }
 
-
 // DeleteKey via HTTP
 // Generated from: @Route "DELETE /{key_id}"
 func (s *AppKeyServiceRemote) DeleteKey(p *request.Context) error {
 	return proxy.Call(s.proxyService, "DeleteKey", p)
 }
-
 
 // GenerateKey via HTTP
 // Generated from: @Route "POST /"
@@ -56,13 +200,11 @@ func (s *AppKeyServiceRemote) GenerateKey(p *request.Context) (*domain.AppKeyRes
 	return proxy.CallWithData[*domain.AppKeyResponse](s.proxyService, "GenerateKey", p)
 }
 
-
 // GetKey via HTTP
 // Generated from: @Route "GET /{key_id}"
 func (s *AppKeyServiceRemote) GetKey(p *request.Context) (*domain.AppKeyInfo, error) {
 	return proxy.CallWithData[*domain.AppKeyInfo](s.proxyService, "GetKey", p)
 }
-
 
 // ListKeys via HTTP
 // Generated from: @Route "GET /"
@@ -70,20 +212,17 @@ func (s *AppKeyServiceRemote) ListKeys(p *request.Context) ([]*domain.AppKeyInfo
 	return proxy.CallWithData[[]*domain.AppKeyInfo](s.proxyService, "ListKeys", p)
 }
 
-
 // RevokeKey via HTTP
 // Generated from: @Route "POST /{key_id}/revoke"
 func (s *AppKeyServiceRemote) RevokeKey(p *request.Context) error {
 	return proxy.Call(s.proxyService, "RevokeKey", p)
 }
 
-
 // RotateKey via HTTP
 // Generated from: @Route "POST /{key_id}/rotate"
 func (s *AppKeyServiceRemote) RotateKey(p *request.Context) (*domain.AppKeyResponse, error) {
 	return proxy.CallWithData[*domain.AppKeyResponse](s.proxyService, "RotateKey", p)
 }
-
 
 
 func AppKeyServiceFactory(deps map[string]any, config map[string]any) any {
@@ -115,7 +254,7 @@ func RegisterAppKeyService() {
 		AppKeyServiceRemoteFactory,
 		deploy.WithRouter(&deploy.ServiceTypeRouter{
 			PathPrefix:  "/api/registration/tenants/{tenant_id}/apps/{app_id}/keys",
-			Middlewares: []string{ "recovery", "request-logger" },
+			Middlewares: []string{ "recovery", "request_logger" },
 			CustomRoutes: map[string]string{
 				"DeleteKey":  "DELETE /{key_id}",
 				"GenerateKey":  "POST /",
@@ -135,6 +274,7 @@ func RegisterAppKeyService() {
 		})
 }
 
+
 // ============================================================
 // FILE: app_service.go
 // ============================================================
@@ -152,13 +292,11 @@ func NewAppServiceRemote(proxyService *proxy.Service) *AppServiceRemote {
 	}
 }
 
-
 // ActivateApp via HTTP
 // Generated from: @Route "POST /{id}/activate"
 func (s *AppServiceRemote) ActivateApp(p *request.Context) error {
 	return proxy.Call(s.proxyService, "ActivateApp", p)
 }
-
 
 // CreateApp via HTTP
 // Generated from: @Route "POST /"
@@ -166,13 +304,11 @@ func (s *AppServiceRemote) CreateApp(p *request.Context) (*domain.App, error) {
 	return proxy.CallWithData[*domain.App](s.proxyService, "CreateApp", p)
 }
 
-
 // DeleteApp via HTTP
 // Generated from: @Route "DELETE /{id}"
 func (s *AppServiceRemote) DeleteApp(p *request.Context) error {
 	return proxy.Call(s.proxyService, "DeleteApp", p)
 }
-
 
 // GetApp via HTTP
 // Generated from: @Route "GET /{id}"
@@ -180,13 +316,11 @@ func (s *AppServiceRemote) GetApp(p *request.Context) (*domain.App, error) {
 	return proxy.CallWithData[*domain.App](s.proxyService, "GetApp", p)
 }
 
-
 // ListAppUsers via HTTP
 // Generated from: @Route "GET /{app_id}/users"
 func (s *AppServiceRemote) ListAppUsers(p *request.Context) ([]string, error) {
 	return proxy.CallWithData[[]string](s.proxyService, "ListAppUsers", p)
 }
-
 
 // ListApps via HTTP
 // Generated from: @Route "GET /"
@@ -194,20 +328,17 @@ func (s *AppServiceRemote) ListApps(p *request.Context) ([]*domain.App, error) {
 	return proxy.CallWithData[[]*domain.App](s.proxyService, "ListApps", p)
 }
 
-
 // SuspendApp via HTTP
 // Generated from: @Route "POST /{id}/suspend"
 func (s *AppServiceRemote) SuspendApp(p *request.Context) error {
 	return proxy.Call(s.proxyService, "SuspendApp", p)
 }
 
-
 // UpdateApp via HTTP
 // Generated from: @Route "PUT /{id}"
 func (s *AppServiceRemote) UpdateApp(p *request.Context) error {
 	return proxy.Call(s.proxyService, "UpdateApp", p)
 }
-
 
 
 func AppServiceFactory(deps map[string]any, config map[string]any) any {
@@ -240,7 +371,7 @@ func RegisterAppService() {
 		AppServiceRemoteFactory,
 		deploy.WithRouter(&deploy.ServiceTypeRouter{
 			PathPrefix:  "/api/registration/tenants/{tenant_id}/apps",
-			Middlewares: []string{ "recovery", "request-logger" },
+			Middlewares: []string{ "recovery", "request_logger" },
 			CustomRoutes: map[string]string{
 				"ActivateApp":  "POST /{id}/activate",
 				"CreateApp":  "POST /",
@@ -279,13 +410,11 @@ func NewBranchServiceRemote(proxyService *proxy.Service) *BranchServiceRemote {
 	}
 }
 
-
 // ActivateBranch via HTTP
 // Generated from: @Route "POST /{id}/activate"
 func (s *BranchServiceRemote) ActivateBranch(p *request.Context) error {
 	return proxy.Call(s.proxyService, "ActivateBranch", p)
 }
-
 
 // CreateBranch via HTTP
 // Generated from: @Route "POST /"
@@ -293,13 +422,11 @@ func (s *BranchServiceRemote) CreateBranch(p *request.Context) (*domain.Branch, 
 	return proxy.CallWithData[*domain.Branch](s.proxyService, "CreateBranch", p)
 }
 
-
 // DeleteBranch via HTTP
 // Generated from: @Route "DELETE /{id}"
 func (s *BranchServiceRemote) DeleteBranch(p *request.Context) error {
 	return proxy.Call(s.proxyService, "DeleteBranch", p)
 }
-
 
 // DisableBranch via HTTP
 // Generated from: @Route "POST /{id}/disable"
@@ -307,13 +434,11 @@ func (s *BranchServiceRemote) DisableBranch(p *request.Context) error {
 	return proxy.Call(s.proxyService, "DisableBranch", p)
 }
 
-
 // GetBranch via HTTP
 // Generated from: @Route "GET /{id}"
 func (s *BranchServiceRemote) GetBranch(p *request.Context) (*domain.Branch, error) {
 	return proxy.CallWithData[*domain.Branch](s.proxyService, "GetBranch", p)
 }
-
 
 // ListBranches via HTTP
 // Generated from: @Route "GET /"
@@ -321,13 +446,11 @@ func (s *BranchServiceRemote) ListBranches(p *request.Context) ([]*domain.Branch
 	return proxy.CallWithData[[]*domain.Branch](s.proxyService, "ListBranches", p)
 }
 
-
 // UpdateBranch via HTTP
 // Generated from: @Route "PUT /{id}"
 func (s *BranchServiceRemote) UpdateBranch(p *request.Context) error {
 	return proxy.Call(s.proxyService, "UpdateBranch", p)
 }
-
 
 
 func BranchServiceFactory(deps map[string]any, config map[string]any) any {
@@ -359,7 +482,7 @@ func RegisterBranchService() {
 		BranchServiceRemoteFactory,
 		deploy.WithRouter(&deploy.ServiceTypeRouter{
 			PathPrefix:  "/api/registration/tenants/{tenant_id}/apps/{app_id}/branches",
-			Middlewares: []string{ "recovery", "request-logger" },
+			Middlewares: []string{ "recovery", "request_logger" },
 			CustomRoutes: map[string]string{
 				"ActivateBranch":  "POST /{id}/activate",
 				"CreateBranch":  "POST /",
@@ -397,13 +520,11 @@ func NewCredentialConfigServiceRemote(proxyService *proxy.Service) *CredentialCo
 	}
 }
 
-
 // GetAppConfig via HTTP
 // Generated from: @Route "GET /tenants/{tenant_id}/apps/{app_id}"
 func (s *CredentialConfigServiceRemote) GetAppConfig(p *request.Context) (*domain.CredentialConfig, error) {
 	return proxy.CallWithData[*domain.CredentialConfig](s.proxyService, "GetAppConfig", p)
 }
-
 
 // GetTenantConfig via HTTP
 // Generated from: @Route "GET /tenants/{tenant_id}"
@@ -411,20 +532,17 @@ func (s *CredentialConfigServiceRemote) GetTenantConfig(p *request.Context) (*do
 	return proxy.CallWithData[*domain.CredentialConfig](s.proxyService, "GetTenantConfig", p)
 }
 
-
 // UpdateAppConfig via HTTP
 // Generated from: @Route "PUT /tenants/{tenant_id}/apps/{app_id}"
 func (s *CredentialConfigServiceRemote) UpdateAppConfig(p *request.Context) (*domain.CredentialConfig, error) {
 	return proxy.CallWithData[*domain.CredentialConfig](s.proxyService, "UpdateAppConfig", p)
 }
 
-
 // UpdateTenantConfig via HTTP
 // Generated from: @Route "PUT /tenants/{tenant_id}"
 func (s *CredentialConfigServiceRemote) UpdateTenantConfig(p *request.Context) (*domain.CredentialConfig, error) {
 	return proxy.CallWithData[*domain.CredentialConfig](s.proxyService, "UpdateTenantConfig", p)
 }
-
 
 
 func CredentialConfigServiceFactory(deps map[string]any, config map[string]any) any {
@@ -456,7 +574,7 @@ func RegisterCredentialConfigService() {
 		CredentialConfigServiceRemoteFactory,
 		deploy.WithRouter(&deploy.ServiceTypeRouter{
 			PathPrefix:  "/api/registration/config/credentials",
-			Middlewares: []string{ "recovery", "request-logger" },
+			Middlewares: []string{ "recovery", "request_logger" },
 			CustomRoutes: map[string]string{
 				"GetAppConfig":  "GET /tenants/{tenant_id}/apps/{app_id}",
 				"GetTenantConfig":  "GET /tenants/{tenant_id}",
@@ -491,13 +609,11 @@ func NewTenantServiceRemote(proxyService *proxy.Service) *TenantServiceRemote {
 	}
 }
 
-
 // ActivateTenant via HTTP
 // Generated from: @Route "POST /{id}/activate"
 func (s *TenantServiceRemote) ActivateTenant(p *request.Context) (*domain.Tenant, error) {
 	return proxy.CallWithData[*domain.Tenant](s.proxyService, "ActivateTenant", p)
 }
-
 
 // CreateTenant via HTTP
 // Generated from: @Route "POST /"
@@ -505,13 +621,11 @@ func (s *TenantServiceRemote) CreateTenant(p *request.Context) (*domain.Tenant, 
 	return proxy.CallWithData[*domain.Tenant](s.proxyService, "CreateTenant", p)
 }
 
-
 // DeleteTenant via HTTP
 // Generated from: @Route "DELETE /{id}"
 func (s *TenantServiceRemote) DeleteTenant(p *request.Context) error {
 	return proxy.Call(s.proxyService, "DeleteTenant", p)
 }
-
 
 // GetTenant via HTTP
 // Generated from: @Route "GET /{id}"
@@ -519,13 +633,11 @@ func (s *TenantServiceRemote) GetTenant(p *request.Context) (*domain.Tenant, err
 	return proxy.CallWithData[*domain.Tenant](s.proxyService, "GetTenant", p)
 }
 
-
 // ListTenants via HTTP
 // Generated from: @Route "GET /"
 func (s *TenantServiceRemote) ListTenants(p *request.Context) ([]*domain.Tenant, error) {
 	return proxy.CallWithData[[]*domain.Tenant](s.proxyService, "ListTenants", p)
 }
-
 
 // SuspendTenant via HTTP
 // Generated from: @Route "POST /{id}/suspend"
@@ -533,13 +645,11 @@ func (s *TenantServiceRemote) SuspendTenant(p *request.Context) (*domain.Tenant,
 	return proxy.CallWithData[*domain.Tenant](s.proxyService, "SuspendTenant", p)
 }
 
-
 // UpdateTenant via HTTP
 // Generated from: @Route "PUT /{id}"
 func (s *TenantServiceRemote) UpdateTenant(p *request.Context) (*domain.Tenant, error) {
 	return proxy.CallWithData[*domain.Tenant](s.proxyService, "UpdateTenant", p)
 }
-
 
 
 func TenantServiceFactory(deps map[string]any, config map[string]any) any {
@@ -570,7 +680,7 @@ func RegisterTenantService() {
 		TenantServiceRemoteFactory,
 		deploy.WithRouter(&deploy.ServiceTypeRouter{
 			PathPrefix:  "/api/registration/tenants",
-			Middlewares: []string{ "recovery", "request-logger" },
+			Middlewares: []string{ "recovery", "request_logger" },
 			CustomRoutes: map[string]string{
 				"ActivateTenant":  "POST /{id}/activate",
 				"CreateTenant":  "POST /",
@@ -590,165 +700,4 @@ func RegisterTenantService() {
 			"depends-on": []string{ "tenant-store",  },
 		})
 }
-
-// ============================================================
-// FILE: user_service.go
-// ============================================================
-
-// UserServiceRemote implements UserServiceInterface with HTTP proxy
-// Auto-generated from UserService interface methods
-type UserServiceRemote struct {
-	proxyService *proxy.Service
-}
-
-// NewUserServiceRemote creates a new remote user-service proxy
-func NewUserServiceRemote(proxyService *proxy.Service) *UserServiceRemote {
-	return &UserServiceRemote{
-		proxyService: proxyService,
-	}
-}
-
-
-// ActivateUser via HTTP
-// Generated from: @Route "POST /{id}/activate"
-func (s *UserServiceRemote) ActivateUser(p *request.Context) error {
-	return proxy.Call(s.proxyService, "ActivateUser", p)
-}
-
-
-// AssignUserToApp via HTTP
-// Generated from: @Route "POST /{user_id}/assign-app"
-func (s *UserServiceRemote) AssignUserToApp(p *request.Context) error {
-	return proxy.Call(s.proxyService, "AssignUserToApp", p)
-}
-
-
-// CreateUser via HTTP
-// Generated from: @Route "POST /"
-func (s *UserServiceRemote) CreateUser(p *request.Context) (*domain.User, error) {
-	return proxy.CallWithData[*domain.User](s.proxyService, "CreateUser", p)
-}
-
-
-// DeleteUser via HTTP
-// Generated from: @Route "DELETE /{id}"
-func (s *UserServiceRemote) DeleteUser(p *request.Context) error {
-	return proxy.Call(s.proxyService, "DeleteUser", p)
-}
-
-
-// GetUser via HTTP
-// Generated from: @Route "GET /{id}"
-func (s *UserServiceRemote) GetUser(p *request.Context) (*domain.User, error) {
-	return proxy.CallWithData[*domain.User](s.proxyService, "GetUser", p)
-}
-
-
-// GetUserByEmail via HTTP
-// Generated from: @Route "GET /by-email/{email}"
-func (s *UserServiceRemote) GetUserByEmail(p *request.Context) (*domain.User, error) {
-	return proxy.CallWithData[*domain.User](s.proxyService, "GetUserByEmail", p)
-}
-
-
-// GetUserByUsername via HTTP
-// Generated from: @Route "GET /by-username/{username}"
-func (s *UserServiceRemote) GetUserByUsername(p *request.Context) (*domain.User, error) {
-	return proxy.CallWithData[*domain.User](s.proxyService, "GetUserByUsername", p)
-}
-
-
-// ListUserApps via HTTP
-// Generated from: @Route "GET /{user_id}/apps"
-func (s *UserServiceRemote) ListUserApps(p *request.Context) ([]string, error) {
-	return proxy.CallWithData[[]string](s.proxyService, "ListUserApps", p)
-}
-
-
-// ListUsers via HTTP
-// Generated from: @Route "GET /"
-func (s *UserServiceRemote) ListUsers(p *request.Context) ([]*domain.User, error) {
-	return proxy.CallWithData[[]*domain.User](s.proxyService, "ListUsers", p)
-}
-
-
-// RemoveUserFromApp via HTTP
-// Generated from: @Route "DELETE /{user_id}/remove-app"
-func (s *UserServiceRemote) RemoveUserFromApp(p *request.Context) error {
-	return proxy.Call(s.proxyService, "RemoveUserFromApp", p)
-}
-
-
-// SuspendUser via HTTP
-// Generated from: @Route "POST /{id}/suspend"
-func (s *UserServiceRemote) SuspendUser(p *request.Context) error {
-	return proxy.Call(s.proxyService, "SuspendUser", p)
-}
-
-
-// UpdateUser via HTTP
-// Generated from: @Route "PUT /{id}"
-func (s *UserServiceRemote) UpdateUser(p *request.Context) error {
-	return proxy.Call(s.proxyService, "UpdateUser", p)
-}
-
-
-
-func UserServiceFactory(deps map[string]any, config map[string]any) any {
-	return &UserService{
-		AppService: service.Cast[*AppService](deps["app-service"]),
-		TenantService: service.Cast[*TenantService](deps["tenant-service"]),
-		UserAppStore: service.Cast[repository.UserAppStore](deps["user-app-store"]),
-		Store: service.Cast[repository.UserStore](deps["user-store"]),
-	}
-}
-
-// UserServiceRemoteFactory creates a remote HTTP client for UserServiceInterface
-// Auto-generated from @RouterService annotation
-func UserServiceRemoteFactory(deps, config map[string]any) any {
-	proxyService, ok := config["remote"].(*proxy.Service)
-	if !ok {
-		panic("remote factory requires 'remote' (proxy.Service) in config")
-	}
-	return NewUserServiceRemote(proxyService)
-}
-
-// RegisterUserService registers the user-service with the registry
-// Auto-generated from annotations:
-//   - @RouterService name="user-service", prefix="/api/registration/tenants/{tenant_id}/users"
-//   - @Inject annotations
-//   - @Route annotations on methods
-func RegisterUserService() {
-	// Register service type with router configuration
-	lokstra_registry.RegisterServiceType("user-service-factory",
-		UserServiceFactory,
-		UserServiceRemoteFactory,
-		deploy.WithRouter(&deploy.ServiceTypeRouter{
-			PathPrefix:  "/api/registration/tenants/{tenant_id}/users",
-			Middlewares: []string{ "recovery", "request-logger" },
-			CustomRoutes: map[string]string{
-				"ActivateUser":  "POST /{id}/activate",
-				"AssignUserToApp":  "POST /{user_id}/assign-app",
-				"CreateUser":  "POST /",
-				"DeleteUser":  "DELETE /{id}",
-				"GetUser":  "GET /{id}",
-				"GetUserByEmail":  "GET /by-email/{email}",
-				"GetUserByUsername":  "GET /by-username/{username}",
-				"ListUserApps":  "GET /{user_id}/apps",
-				"ListUsers":  "GET /",
-				"RemoveUserFromApp":  "DELETE /{user_id}/remove-app",
-				"SuspendUser":  "POST /{id}/suspend",
-				"UpdateUser":  "PUT /{id}",
-			},
-		}),
-	)
-
-	// Register lazy service with auto-detected dependencies
-	lokstra_registry.RegisterLazyService("user-service",
-		"user-service-factory",
-		map[string]any{
-			"depends-on": []string{ "app-service", "tenant-service", "user-app-store", "user-store",  },
-		})
-}
-
 

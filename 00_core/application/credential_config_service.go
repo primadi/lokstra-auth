@@ -9,7 +9,7 @@ import (
 )
 
 // CredentialConfigService manages credential provider configuration
-// @RouterService name="credential-config-service", prefix="/api/registration/config/credentials", middlewares=["recovery", "request-logger"]
+// @RouterService name="credential-config-service", prefix="/api/registration/config/credentials", middlewares=["recovery", "request_logger"]
 type CredentialConfigService struct {
 	// @Inject "tenant-service"
 	TenantService *service.Cached[*TenantService]
@@ -19,7 +19,7 @@ type CredentialConfigService struct {
 
 // GetTenantConfig retrieves tenant-level default credential config
 // @Route "GET /tenants/{tenant_id}"
-func (s *CredentialConfigService) GetTenantConfig(ctx *request.Context, req *GetTenantCredentialConfigRequest) (*domain.CredentialConfig, error) {
+func (s *CredentialConfigService) GetTenantConfig(ctx *request.Context, req *domain.GetTenantCredentialConfigRequest) (*domain.CredentialConfig, error) {
 	tenant, err := s.TenantService.MustGet().GetTenant(ctx, &domain.GetTenantRequest{
 		ID: req.TenantID,
 	})
@@ -37,7 +37,7 @@ func (s *CredentialConfigService) GetTenantConfig(ctx *request.Context, req *Get
 
 // UpdateTenantConfig updates tenant-level default credential config
 // @Route "PUT /tenants/{tenant_id}"
-func (s *CredentialConfigService) UpdateTenantConfig(ctx *request.Context, req *UpdateTenantCredentialConfigRequest) (*domain.CredentialConfig, error) {
+func (s *CredentialConfigService) UpdateTenantConfig(ctx *request.Context, req *domain.UpdateTenantCredentialConfigRequest) (*domain.CredentialConfig, error) {
 	tenant, err := s.TenantService.MustGet().GetTenant(ctx, &domain.GetTenantRequest{
 		ID: req.TenantID,
 	})
@@ -70,7 +70,7 @@ func (s *CredentialConfigService) UpdateTenantConfig(ctx *request.Context, req *
 
 // GetAppConfig retrieves app-specific credential config
 // @Route "GET /tenants/{tenant_id}/apps/{app_id}"
-func (s *CredentialConfigService) GetAppConfig(ctx *request.Context, req *GetAppCredentialConfigRequest) (*domain.CredentialConfig, error) {
+func (s *CredentialConfigService) GetAppConfig(ctx *request.Context, req *domain.GetAppCredentialConfigRequest) (*domain.CredentialConfig, error) {
 	app, err := s.AppService.MustGet().GetApp(ctx, &domain.GetAppRequest{
 		TenantID: req.TenantID,
 		ID:       req.AppID,
@@ -81,7 +81,7 @@ func (s *CredentialConfigService) GetAppConfig(ctx *request.Context, req *GetApp
 
 	if app.Config == nil || app.Config.Credentials == nil {
 		// Return tenant default or global default
-		return s.GetTenantConfig(ctx, &GetTenantCredentialConfigRequest{
+		return s.GetTenantConfig(ctx, &domain.GetTenantCredentialConfigRequest{
 			TenantID: req.TenantID,
 		})
 	}
@@ -91,7 +91,7 @@ func (s *CredentialConfigService) GetAppConfig(ctx *request.Context, req *GetApp
 
 // UpdateAppConfig updates app-specific credential config
 // @Route "PUT /tenants/{tenant_id}/apps/{app_id}"
-func (s *CredentialConfigService) UpdateAppConfig(ctx *request.Context, req *UpdateAppCredentialConfigRequest) (*domain.CredentialConfig, error) {
+func (s *CredentialConfigService) UpdateAppConfig(ctx *request.Context, req *domain.UpdateAppCredentialConfigRequest) (*domain.CredentialConfig, error) {
 	app, err := s.AppService.MustGet().GetApp(ctx, &domain.GetAppRequest{
 		TenantID: req.TenantID,
 		ID:       req.AppID,
@@ -121,28 +121,4 @@ func (s *CredentialConfigService) UpdateAppConfig(ctx *request.Context, req *Upd
 	}
 
 	return app.Config.Credentials, nil
-}
-
-// =============================================================================
-// DTOs
-// =============================================================================
-
-type GetTenantCredentialConfigRequest struct {
-	TenantID string `path:"tenant_id" validate:"required"`
-}
-
-type UpdateTenantCredentialConfigRequest struct {
-	TenantID string                   `path:"tenant_id" validate:"required"`
-	Config   *domain.CredentialConfig `json:"config" validate:"required"`
-}
-
-type GetAppCredentialConfigRequest struct {
-	TenantID string `path:"tenant_id" validate:"required"`
-	AppID    string `path:"app_id" validate:"required"`
-}
-
-type UpdateAppCredentialConfigRequest struct {
-	TenantID string                   `path:"tenant_id" validate:"required"`
-	AppID    string                   `path:"app_id" validate:"required"`
-	Config   *domain.CredentialConfig `json:"config" validate:"required"`
 }

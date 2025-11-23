@@ -10,7 +10,7 @@ import (
 	"github.com/primadi/lokstra/core/service"
 )
 
-// @RouterService name="tenant-service", prefix="/api/registration/tenants", middlewares=["recovery", "request-logger"]
+// @RouterService name="tenant-service", prefix="/api/registration/tenants", middlewares=["recovery", "request_logger"]
 type TenantService struct {
 	// @Inject "tenant-store"
 	Store *service.Cached[repository.TenantStore]

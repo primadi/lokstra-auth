@@ -1,0 +1,82 @@
+### App Key Service API Tests
+@baseUrl = http://localhost:8080
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+@branchId = hq-jakarta
+@appKeyId = prod-api-key-001
+
+### 1. Create App Key
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys
+Content-Type: {{contentType}}
+
+{
+  "name": "Production API Key",
+  "description": "API key for production environment",
+  "scopes": ["read", "write"],
+  "expires_at": "2026-12-31T23:59:59Z",
+  "metadata": {
+    "created_by": "admin",
+    "purpose": "production-api"
+  }
+}
+
+### 2. Create Read-Only App Key
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys
+Content-Type: {{contentType}}
+
+{
+  "name": "Read-Only API Key",
+  "description": "API key with read-only access",
+  "scopes": ["read"],
+  "expires_at": "2026-06-30T23:59:59Z",
+  "metadata": {
+    "created_by": "admin",
+    "purpose": "monitoring"
+  }
+}
+
+### 3. Get App Key by ID
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys/{{appKeyId}}
+
+### 4. List All App Keys for Branch
+GET {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys
+
+### 5. Validate App Key
+# Note: Replace <actual-key-value> with the key returned from create request
+POST {{baseUrl}}/api/v1/app-keys/validate
+Content-Type: {{contentType}}
+
+{
+  "key": "<actual-key-value-from-create-response>"
+}
+
+### 6. Update App Key
+PUT {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys/{{appKeyId}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Production API Key Updated",
+  "description": "Updated production API key",
+  "scopes": ["read", "write", "admin"],
+  "metadata": {
+    "updated_by": "admin",
+    "purpose": "production-api"
+  }
+}
+
+### 7. Revoke App Key
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys/{{appKeyId}}/revoke
+
+### 8. Delete App Key
+DELETE {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys/{{appKeyId}}
+
+### 9. Rotate App Key
+POST {{baseUrl}}/api/v1/tenants/{{tenantId}}/apps/{{appId}}/branches/{{branchId}}/app-keys/{{appKeyId}}/rotate
+Content-Type: {{contentType}}
+
+{
+  "expires_at": "2027-12-31T23:59:59Z"
+}
+
+### Note: @appKeyValue will be returned in create response and should be saved securely

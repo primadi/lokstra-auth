@@ -1,0 +1,90 @@
+### User Service API Tests
+@baseUrl = http://localhost:8080
+@contentType = application/json
+@tenantId = acme-corp
+@userId = john.doe
+
+### 1. Create User
+POST {{baseUrl}}/api/registration/tenants/{{tenantId}}/users
+Content-Type: {{contentType}}
+
+{
+  "id": "john.doe",
+  "username": "john.doe",
+  "email": "john.doe@example.com",
+  "metadata": {
+    "full_name": "John Doe",
+    "department": "Engineering",
+    "position": "Developer"
+  }
+}
+
+### 2. Create Admin User
+POST {{baseUrl}}/api/registration/tenants/{{tenantId}}/users
+Content-Type: {{contentType}}
+
+{
+  "id": "admin",
+  "username": "admin",
+  "email": "admin@example.com",
+  "metadata": {
+    "full_name": "Admin User",
+    "department": "IT",
+    "position": "Administrator"
+  }
+}
+
+### 3. Get User by ID
+GET {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/id/{{userId}}
+
+### 4. Get User by Username
+GET {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/by-username/john.doe
+
+### 5. Get User by Email
+GET {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/by-email/john.doe@example.com
+
+### 6. List All Users for Tenant
+GET {{baseUrl}}/api/registration/tenants/{{tenantId}}/users
+
+### 7. Update User
+PUT {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/id/{{userId}}
+Content-Type: {{contentType}}
+
+{
+  "username": "john.doe",
+  "email": "john.doe@example.com",
+  "metadata": {
+    "full_name": "John Doe Updated",
+    "department": "Engineering",
+    "position": "Senior Developer"
+  }
+}
+
+### 8. Suspend User
+POST {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/id/{{userId}}/suspend
+
+### 9. Activate User
+POST {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/id/{{userId}}/activate
+
+### 10. Assign User to App
+POST {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/id/{{userId}}/assign-app
+Content-Type: {{contentType}}
+
+{
+  "app_id": "main-app"
+}
+
+### 11. List User Apps
+GET {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/id/{{userId}}/apps
+
+### 12. Remove User from App
+DELETE {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/id/{{userId}}/remove-app
+Content-Type: {{contentType}}
+
+{
+  "app_id": "main-app"
+}
+
+### 13. Delete User
+DELETE {{baseUrl}}/api/registration/tenants/{{tenantId}}/users/id/{{userId}}
+

@@ -38,10 +38,10 @@ github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee/go.mod h1:yWu
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/primadi/lokstra v0.4.3 h1:UQvs57Z0IznturxBq2sL8dF1LR8rIuFlQ4g5NTXkAnA=
-github.com/primadi/lokstra v0.4.3/go.mod h1:07jRJOVJL4u7R3KJJwTOVok7KJG02NNAqifrEY3ZRmI=
-github.com/primadi/lokstra v0.4.4 h1:KpNY3MVY77MhouPOQSFB4T6yBxtaq3qmqsaoF5Lb+xg=
-github.com/primadi/lokstra v0.4.4/go.mod h1:07jRJOVJL4u7R3KJJwTOVok7KJG02NNAqifrEY3ZRmI=
+github.com/primadi/lokstra v0.4.5 h1:wwjJ65NJNM4wxf8xvBkfKrYYaOA/evJUfHZCeH3WoTA=
+github.com/primadi/lokstra v0.4.5/go.mod h1:07jRJOVJL4u7R3KJJwTOVok7KJG02NNAqifrEY3ZRmI=
+github.com/primadi/lokstra v0.4.6 h1:lEZDoKd53R8z0mZhEr2B/ARuVMSIXgANkLNHV8l4bGA=
+github.com/primadi/lokstra v0.4.6/go.mod h1:07jRJOVJL4u7R3KJJwTOVok7KJG02NNAqifrEY3ZRmI=
 github.com/redis/go-redis/v9 v9.17.0 h1:K6E+ZlYN95KSMmZeEQPbU/c++wfmEvfFB17yEAq/VhM=
 github.com/redis/go-redis/v9 v9.17.0/go.mod h1:u410H11HMLoB+TP67dz8rL9s6QW2j76l0//kSOd3370=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=

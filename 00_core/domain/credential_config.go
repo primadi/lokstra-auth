@@ -143,3 +143,27 @@ func DefaultCredentialConfig() *CredentialConfig {
 		EnablePasskey:      false,
 	}
 }
+
+// =============================================================================
+// DTOs
+// =============================================================================
+
+type GetTenantCredentialConfigRequest struct {
+	TenantID string `path:"tenant_id" validate:"required"`
+}
+
+type UpdateTenantCredentialConfigRequest struct {
+	TenantID string            `path:"tenant_id" validate:"required"`
+	Config   *CredentialConfig `json:"config" validate:"required"`
+}
+
+type GetAppCredentialConfigRequest struct {
+	TenantID string `path:"tenant_id" validate:"required"`
+	AppID    string `path:"app_id" validate:"required"`
+}
+
+type UpdateAppCredentialConfigRequest struct {
+	TenantID string            `path:"tenant_id" validate:"required"`
+	AppID    string            `path:"app_id" validate:"required"`
+	Config   *CredentialConfig `json:"config" validate:"required"`
+}
