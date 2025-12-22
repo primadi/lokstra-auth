@@ -20,32 +20,32 @@ This document tracks the implementation of multi-tenant and multi-app support ac
 **Status**: All authenticators multi-tenant ready
 
 **Updated Files**:
-- `01_credential/contract.go`
+- `credential/contract.go`
   - Added `AuthContext` struct with `TenantID` and `AppID`
   - Updated `Authenticator` interface to accept `AuthContext`
   - Added `AuthenticationResult` with tenant/app fields
   - Added validation errors (`ErrMissingTenantID`, `ErrMissingAppID`)
 
-- `01_credential/basic/authenticator.go`
+- `credential/basic/authenticator.go`
   - `Authenticate()` now requires `AuthContext`
   - Validates tenant/app required
   - Composite keys for credential storage
 
-- `01_credential/apikey/authenticator.go`
+- `credential/apikey/authenticator.go`
   - Service-to-service authentication with tenant/app scoping
   - API keys scoped per tenant+app
 
-- `01_credential/oauth2/authenticator.go`
+- `credential/oauth2/authenticator.go`
   - OAuth2 flows with tenant awareness
 
-- `01_credential/passwordless/authenticator.go`
+- `credential/passwordless/authenticator.go`
   - Passwordless tokens scoped per tenant
 
-- `01_credential/passkey/authenticator.go`
+- `credential/passkey/authenticator.go`
   - WebAuthn credentials scoped per tenant
 
 **Examples**:
-- `examples/01_credential/01_basic_multitenant/` - Demonstrates tenant isolation
+- `examples/credential/01_basic_multitenant/` - Demonstrates tenant isolation
 
 **Build Status**: ✅ Passes
 
@@ -55,7 +55,7 @@ This document tracks the implementation of multi-tenant and multi-app support ac
 **Status**: JWT and Simple token managers support multi-tenant
 
 **Updated Files**:
-- `02_token/contract.go`
+- `token/contract.go`
   - Added `TenantID` and `AppID` fields to `Token` struct
   - Added `Claims` helper methods:
     - `GetTenantID(claims) string`
@@ -68,12 +68,12 @@ This document tracks the implementation of multi-tenant and multi-app support ac
     - `RevokeAllAppTokens(ctx, tenantID, appID)`
     - `RevokeAllUserTokens(ctx, tenantID, userID)`
 
-- `02_token/jwt/manager.go`
+- `token/jwt/manager.go`
   - `Generate()`: Validates `tenant_id`/`app_id` required, embeds in JWT claims
   - `GenerateRefreshToken()`: Includes tenant/app in refresh tokens
   - `Verify()`: Validates tenant/app claims exist in token
 
-- `02_token/simple/manager.go`
+- `token/simple/manager.go`
   - Same tenant/app validation for opaque tokens
   - Metadata includes tenant/app information
 
@@ -88,8 +88,8 @@ This document tracks the implementation of multi-tenant and multi-app support ac
 **Status**: Subject resolution and identity building fully multi-tenant
 
 **Updated Files**:
-- `03_subject/contract.go`
-  - Added `TenantID` field to `Subject` struct
+- `rbac/contract.go`
+  - Added `TenantID` field to `rbac` struct
   - Updated `IdentityContext` with:
     - `TenantID string` - Required, from token claims
     - `AppID string` - Required, from token claims
@@ -102,26 +102,26 @@ This document tracks the implementation of multi-tenant and multi-app support ac
     - `ListBySubject(ctx, tenantID, subjectID)`
     - `DeleteBySubject(ctx, tenantID, subjectID)`
 
-- `03_subject/simple/resolver.go`
+- `identity/simple/resolver.go`
   - `Resolve()`: Extracts `tenant_id` from claims (required)
   - Validates tenant_id not empty
   - Populates `Subject.TenantID`
 
-- `03_subject/simple/builder.go`
+- `identity/simple/builder.go`
   - `Build()`: Extracts `app_id` from `Subject.Attributes`
   - Validates app_id required
   - Passes tenant/app to all providers
   - Static providers use composite keys: `tenant:app:role`, `tenant:user`
 
-- `03_subject/cached/resolver.go`
+- `identity/cached/resolver.go`
   - Cache keys include tenant: `subject:tenantID:subjectID`
   - Cache keys for identity: `identity:tenantID:appID:subjectID`
   - `Invalidate()` requires tenant/app/subject parameters
 
-- `03_subject/enriched/builder.go`
+- `identity/enriched/builder.go`
   - `ProfileEnricher` updated to pass tenant to provider
 
-- `03_subject/store.go`
+- `rbac/store.go`
   - `ListBySubject()` filters by tenant+subject
   - `DeleteBySubject()` scoped to tenant
 
@@ -133,7 +133,7 @@ This document tracks the implementation of multi-tenant and multi-app support ac
 **Status**: RBAC, ABAC, ACL, and Policy evaluators fully multi-tenant
 
 **Updated Files**:
-- `04_authz/contract.go`
+- `authz/contract.go`
   - Added `TenantID` and `AppID` to `Resource` struct
   - Updated `Policy` struct:
     - `TenantID string` - Required, policy belongs to tenant
@@ -153,14 +153,14 @@ This document tracks the implementation of multi-tenant and multi-app support ac
   - Updated `AttributeProvider`:
     - `GetSubjectAttributes(ctx, tenantID, subjectID)`
 
-- `04_authz/rbac/evaluator.go`
+- `authz/rbac/evaluator.go`
   - Composite keys: `tenantID:appID:role` → permissions
   - `Evaluate()`: Validates resource tenant/app match identity
   - `AddRolePermission(tenantID, appID, role, permission)`
   - `GetRolePermissions(tenantID, appID, role)`
   - Complete tenant+app isolation for role-permission mappings
 
-- `04_authz/abac/evaluator.go`
+- `authz/abac/evaluator.go`
   - Updated `Rule` struct with `TenantID` and `AppID`
   - `Evaluate()`:
     - Validates resource tenant/app match
@@ -168,7 +168,7 @@ This document tracks the implementation of multi-tenant and multi-app support ac
     - Includes tenant/app in subject and resource attributes
   - `getSubjectAttributes()`: Adds tenant_id, app_id to attributes
 
-- `04_authz/acl/manager.go`
+- `authz/acl/manager.go`
   - Composite keys: `tenantID:appID:resourceType:resourceID`
   - All methods require tenant/app parameters:
     - `grantPermissions(ctx, tenantID, appID, ...)`
@@ -178,7 +178,7 @@ This document tracks the implementation of multi-tenant and multi-app support ac
     - `CopyACL(ctx, tenantID, appID, ...)`
   - `Evaluate()`: Validates tenant/app match before checking ACLs
 
-- `04_authz/policy/evaluator.go`
+- `authz/policy/evaluator.go`
   - `Evaluate()`: Validates resource tenant/app match
   - `findApplicablePolicies()`:
     - Uses tenant+app scoped store queries
@@ -193,7 +193,7 @@ This document tracks the implementation of multi-tenant and multi-app support ac
 **Status**: TenantService, AppService, and UserService implemented
 
 **Created Files**:
-- `00_core/services/tenant_service.go`
+- `core/services/tenant_service.go`
   - `TenantService` - Manages tenant CRUD operations
   - `TenantStore` interface - Persistence abstraction
   - `InMemoryTenantStore` - In-memory implementation
@@ -206,7 +206,7 @@ This document tracks the implementation of multi-tenant and multi-app support ac
     - `ActivateTenant(tenantID)` - Activate suspended tenant
     - `SuspendTenant(tenantID)` - Suspend tenant
 
-- `00_core/services/app_service.go`
+- `core/services/app_service.go`
   - `AppService` - Manages app operations within tenants
   - `AppStore` interface - Tenant-scoped persistence
   - `InMemoryAppStore` - In-memory implementation with composite keys
@@ -222,7 +222,7 @@ This document tracks the implementation of multi-tenant and multi-app support ac
   - Validates tenant exists and is active before creating apps
   - Uses composite keys: `tenantID:appID` for isolation
 
-- `00_core/services/user_service.go`
+- `core/services/user_service.go`
   - `UserService` - Manages user operations within tenants
   - `UserStore` interface - Tenant-scoped persistence
   - `InMemoryUserStore` - In-memory implementation with composite keys
@@ -243,7 +243,7 @@ This document tracks the implementation of multi-tenant and multi-app support ac
   - Checks username/email uniqueness within tenant
   - Uses composite keys: `tenantID:userID` for isolation
 
-- `00_core/services/utils.go`
+- `core/services/utils.go`
   - `utils.GenerateID(prefix)` - Generate unique IDs with prefix
   - Uses crypto/rand for secure random IDs
   - Format: `prefix_hexstring` (e.g., `tenant_a1b2c3d4e5f6...`)
@@ -271,21 +271,21 @@ This document tracks the implementation of multi-tenant and multi-app support ac
 **Status**: Not started
 
 **TODO**:
-- Create `00_core/services/tenant_service.go`
+- Create `core/services/tenant_service.go`
   - `CreateTenant(name, description) (*Tenant, error)`
   - `GetTenant(tenantID) (*Tenant, error)`
   - `UpdateTenant(tenant) error`
   - `DeleteTenant(tenantID) error`
   - `ListTenants() ([]*Tenant, error)`
 
-- Create `00_core/services/app_service.go`
+- Create `core/services/app_service.go`
   - `CreateApp(tenantID, name, appType, config) (*App, error)`
   - `GetApp(tenantID, appID) (*App, error)`
   - `UpdateApp(app) error`
   - `DeleteApp(tenantID, appID) error`
   - `ListApps(tenantID) ([]*App, error)`
 
-- Create `00_core/services/user_service.go`
+- Create `core/services/user_service.go`
   - `CreateUser(tenantID, username, email) (*User, error)`
   - `GetUser(tenantID, userID) (*User, error)`
   - `UpdateUser(user) error`
@@ -302,10 +302,10 @@ This document tracks the implementation of multi-tenant and multi-app support ac
 - Update all examples to use `AuthContext`
 - Demonstrate tenant isolation
 - Examples to update:
-  - `examples/01_credential/*` (except 01_basic_multitenant which is done)
-  - `examples/02_token/*`
-  - `examples/03_subject/*`
-  - `examples/04_authz/*`
+  - `examples/credential/*` (except 01_basic_multitenant which is done)
+  - `examples/token/*`
+  - `examples/rbac/*`
+  - `examples/authz/*`
   - `examples/complete/*`
   - `examples/middleware/*`
 
@@ -346,7 +346,7 @@ This document tracks the implementation of multi-tenant and multi-app support ac
    └─ Returns: claims with tenant_id, app_id
 
 5. Subject Resolution
-   ├─ SubjectResolver.Resolve(ctx, claims)
+   ├─ IdentityResolver.Resolve(ctx, claims)
    ├─ Extracts: tenant_id (required)
    └─ Returns: Subject { TenantID, ID }
 
@@ -375,16 +375,16 @@ This document tracks the implementation of multi-tenant and multi-app support ac
 ### Build Verification
 ```powershell
 # All layers build successfully
-go build ./01_credential/...  # ✅ PASS
-go build ./02_token/...       # ✅ PASS
-go build ./03_subject/...     # ✅ PASS
-go build ./04_authz/...       # ✅ PASS
+go build ./credential/...  # ✅ PASS
+go build ./token/...       # ✅ PASS
+go build ./rbac/...     # ✅ PASS
+go build ./authz/...       # ✅ PASS
 ```
 
 ### Example Verification
 ```powershell
 # Basic multi-tenant example runs successfully
-go run examples/01_credential/01_basic_multitenant/main.go
+go run examples/credential/01_basic_multitenant/main.go
 # Output shows tenant isolation working correctly
 ```
 
@@ -488,6 +488,6 @@ All core features implemented, documented, and tested. Migration guide available
 **Next Steps for Users**:
 1. Review [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for upgrade instructions
 2. Check [MULTI_TENANT_UPDATE.md](MULTI_TENANT_UPDATE.md) for quick start
-3. Run working examples in `examples/01_credential/01_basic/` and `examples/services/01_multi_tenant_management/`
+3. Run working examples in `examples/credential/01_basic/` and `examples/services/01_multi_tenant_management/`
 4. Integrate service layer for tenant/app/user management
 

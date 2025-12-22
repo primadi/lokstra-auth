@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://primadi.github.io/lokstra/schema/lokstra.schema.json
+
+configs:
+ store:
+    tenant-store: ${TENANT_STORE:postgres-tenant-store} # Options: in-memory-tenant-store, postgres-tenant-store
+    branch-store: ${BRANCH_STORE:postgres-branch-store} # Options: in-memory-branch-store, postgres-branch-store
+    user-store: ${USER_STORE:postgres-user-store} # Options: in-memory-user-store, postgres-user-store
+    app-store: ${APP_STORE:postgres-app-store} # Options: in-memory-app-store, postgres-app-store
+    
+    user-app-store: ${USER_APP_STORE:postgres-user-app-store} # Options: in-memory-user-app-store, postgres-user-app-store
+    user-role-store: ${USER_ROLE_STORE:postgres-user-role-store} # Options: in-memory-user-role-store, postgres-user-role-store
+    app-key-store: ${APP_KEY_STORE:postgres-app-key-store} # Options: in-memory-app-key-store, postgres-app-key-store
+    policy-store: ${POLICY_STORE:postgres-policy-store} # Options: in-memory-policy-store, postgres-policy-store
+    
+    user-identity-store: ${USER_IDENTITY_STORE:postgres-user-identity-store} # Options: in-memory-user-identity-store, postgres-user-identity-store
+    credential-provider-store: ${CREDENTIAL_PROVIDER_STORE:postgres-credential-provider-store} # Options: in-memory-credential-provider-store, postgres-credential-provider-store

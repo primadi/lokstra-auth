@@ -1,0 +1,662 @@
+### ABAC (Attribute-Based Access Control) Service API Tests
+### Handles attribute-based authorization with rules and conditions
+@baseUrl = http://localhost:9090/api/auth/authz
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+
+# Prerequisites:
+# 1. User must be authenticated
+# 2. ABAC rules must be configured
+# 3. Subject and resource attributes must be available
+
+# =============================================================================
+# VARIABLES
+# =============================================================================
+
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+@ruleId = rule-dept-access
+@policyId = policy-working-hours
+
+# =============================================================================
+# ABAC RULE MANAGEMENT
+# =============================================================================
+
+### 1. Create ABAC Rule - Department-Based Access
+POST {{baseUrl}}/abac/rules
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "{{ruleId}}",
+  "name": "Department Access Rule",
+  "description": "Users can only access documents from their department",
+  "effect": "allow",
+  "conditions": [
+    {
+      "key": "subject.department",
+      "operator": "equals",
+      "value": "resource.department"
+    }
+  ],
+  "priority": 100
+}
+
+### 2. Create ABAC Rule - Manager Override
+POST {{baseUrl}}/abac/rules
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "rule-manager-override",
+  "name": "Manager Override",
+  "description": "Managers can access any document in their department",
+  "effect": "allow",
+  "conditions": [
+    {
+      "key": "subject.role",
+      "operator": "equals",
+      "value": "manager"
+    },
+    {
+      "key": "subject.department",
+      "operator": "equals",
+      "value": "resource.department"
+    }
+  ],
+  "priority": 200
+}
+
+### 3. Create ABAC Rule - Time-Based Access
+POST {{baseUrl}}/abac/rules
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "rule-working-hours",
+  "name": "Working Hours Only",
+  "description": "Access allowed only during working hours (9 AM - 5 PM)",
+  "effect": "allow",
+  "conditions": [
+    {
+      "key": "context.time.hour",
+      "operator": "greater_than_or_equal",
+      "value": 9
+    },
+    {
+      "key": "context.time.hour",
+      "operator": "less_than",
+      "value": 17
+    }
+  ],
+  "priority": 50
+}
+
+### 4. Create ABAC Rule - IP Address Restriction
+POST {{baseUrl}}/abac/rules
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "rule-ip-whitelist",
+  "name": "IP Whitelist",
+  "description": "Access only from office network",
+  "effect": "allow",
+  "conditions": [
+    {
+      "key": "context.ip_address",
+      "operator": "starts_with",
+      "value": "192.168."
+    }
+  ],
+  "priority": 150
+}
+
+### 5. Create ABAC Rule - Document Status
+POST {{baseUrl}}/abac/rules
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "rule-published-only",
+  "name": "Published Documents Only",
+  "description": "Regular users can only access published documents",
+  "effect": "allow",
+  "conditions": [
+    {
+      "key": "resource.status",
+      "operator": "equals",
+      "value": "published"
+    },
+    {
+      "key": "subject.role",
+      "operator": "not_equals",
+      "value": "admin"
+    }
+  ],
+  "priority": 75
+}
+
+### 6. Get Rule by ID
+GET {{baseUrl}}/abac/rules/{{ruleId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 7. List All ABAC Rules
+GET {{baseUrl}}/abac/rules
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 8. Update ABAC Rule
+PUT {{baseUrl}}/abac/rules/{{ruleId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "name": "Department Access Rule (Updated)",
+  "description": "Users can access documents from their department or shared docs",
+  "conditions": [
+    {
+      "key": "subject.department",
+      "operator": "equals",
+      "value": "resource.department"
+    },
+    {
+      "key": "resource.shared",
+      "operator": "equals",
+      "value": true
+    }
+  ]
+}
+
+### 9. Delete ABAC Rule
+DELETE {{baseUrl}}/abac/rules/{{ruleId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# AUTHORIZATION CHECKS WITH ATTRIBUTES
+# =============================================================================
+
+### 10. Check - Same Department Access (Should Allow)
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-001",
+    "attributes": {
+      "department": "engineering",
+      "role": "engineer",
+      "level": "senior"
+    }
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "document",
+    "id": "doc-123",
+    "attributes": {
+      "department": "engineering",
+      "status": "published",
+      "owner": "usr-002"
+    }
+  },
+  "context": {
+    "ip_address": "192.168.1.100",
+    "time": {
+      "hour": 14,
+      "day": "monday"
+    }
+  }
+}
+
+### 11. Check - Different Department (Should Deny)
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-001",
+    "attributes": {
+      "department": "engineering",
+      "role": "engineer"
+    }
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "document",
+    "id": "doc-456",
+    "attributes": {
+      "department": "sales",
+      "status": "published"
+    }
+  }
+}
+
+### 12. Check - Manager Cross-Department (Should Allow)
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-manager",
+    "attributes": {
+      "department": "engineering",
+      "role": "manager"
+    }
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "document",
+    "id": "doc-eng-report",
+    "attributes": {
+      "department": "engineering",
+      "status": "draft"
+    }
+  }
+}
+
+### 13. Check - Outside Working Hours (Should Deny)
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-001",
+    "attributes": {
+      "department": "engineering",
+      "role": "engineer"
+    }
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "document",
+    "id": "doc-123",
+    "attributes": {
+      "department": "engineering"
+    }
+  },
+  "context": {
+    "time": {
+      "hour": 22
+    }
+  }
+}
+
+### 14. Check - Outside Office Network (Should Deny)
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-001",
+    "attributes": {
+      "department": "engineering"
+    }
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "document",
+    "id": "doc-123",
+    "attributes": {
+      "department": "engineering"
+    }
+  },
+  "context": {
+    "ip_address": "203.0.113.45"
+  }
+}
+
+### 15. Check - Draft Document Access (Should Deny for Non-Admin)
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-viewer",
+    "attributes": {
+      "department": "engineering",
+      "role": "viewer"
+    }
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "document",
+    "id": "doc-draft",
+    "attributes": {
+      "department": "engineering",
+      "status": "draft"
+    }
+  }
+}
+
+### 16. Check - Multiple Conditions Met
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-001",
+    "attributes": {
+      "department": "engineering",
+      "role": "engineer",
+      "clearance_level": "confidential"
+    }
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "document",
+    "id": "doc-confidential",
+    "attributes": {
+      "department": "engineering",
+      "status": "published",
+      "classification": "confidential"
+    }
+  },
+  "context": {
+    "ip_address": "192.168.1.100",
+    "time": {
+      "hour": 14
+    }
+  }
+}
+
+# =============================================================================
+# ABAC POLICY MANAGEMENT
+# =============================================================================
+
+### 17. Create ABAC Policy (Collection of Rules)
+POST {{baseUrl}}/abac/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "{{policyId}}",
+  "name": "Working Hours Policy",
+  "description": "Enforce working hours access control",
+  "rule_ids": [
+    "rule-working-hours",
+    "rule-ip-whitelist"
+  ],
+  "combination": "all",
+  "active": true
+}
+
+### 18. Get Policy by ID
+GET {{baseUrl}}/abac/policies/{{policyId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 19. List All Policies
+GET {{baseUrl}}/abac/policies
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 20. Update Policy
+PUT {{baseUrl}}/abac/policies/{{policyId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "name": "Enhanced Working Hours Policy",
+  "rule_ids": [
+    "rule-working-hours",
+    "rule-ip-whitelist",
+    "rule-published-only"
+  ],
+  "combination": "any"
+}
+
+### 21. Activate/Deactivate Policy
+PATCH {{baseUrl}}/abac/policies/{{policyId}}/status
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "active": false
+}
+
+### 22. Delete Policy
+DELETE {{baseUrl}}/abac/policies/{{policyId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# ATTRIBUTE OPERATORS
+# =============================================================================
+
+### 23. Test Operator: equals
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {"attributes": {"level": "senior"}},
+  "action": "document:approve",
+  "resource": {"attributes": {"required_level": "senior"}}
+}
+
+### 24. Test Operator: contains
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {"attributes": {"tags": ["developer", "backend"]}},
+  "action": "code:review",
+  "resource": {"attributes": {"tech_stack": "backend"}}
+}
+
+### 25. Test Operator: in_list
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {"attributes": {"department": "engineering"}},
+  "action": "document:read",
+  "resource": {"attributes": {"allowed_departments": ["engineering", "product"]}}
+}
+
+### 26. Test Operator: greater_than
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {"attributes": {"security_clearance": 3}},
+  "action": "document:read",
+  "resource": {"attributes": {"required_clearance": 2}}
+}
+
+# =============================================================================
+# WORKFLOW EXAMPLES
+# =============================================================================
+
+### WORKFLOW 1: Complete ABAC Setup
+# Step 1: Create basic department rule
+POST {{baseUrl}}/abac/rules
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "rule-dept",
+  "name": "Department Rule",
+  "effect": "allow",
+  "conditions": [
+    {"key": "subject.department", "operator": "equals", "value": "resource.department"}
+  ]
+}
+
+###
+
+# Step 2: Check access with matching attributes
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "id": "usr-001",
+    "attributes": {"department": "engineering"}
+  },
+  "action": "document:read",
+  "resource": {
+    "id": "doc-123",
+    "attributes": {"department": "engineering"}
+  }
+}
+
+###
+
+# Step 3: Check with non-matching attributes (should deny)
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "id": "usr-001",
+    "attributes": {"department": "engineering"}
+  },
+  "action": "document:read",
+  "resource": {
+    "id": "doc-456",
+    "attributes": {"department": "sales"}
+  }
+}
+
+# =============================================================================
+# EDGE CASES
+# =============================================================================
+
+### Edge Case 1: Missing Attributes
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "id": "usr-001",
+    "attributes": {}
+  },
+  "action": "document:read",
+  "resource": {
+    "id": "doc-123",
+    "attributes": {"department": "engineering"}
+  }
+}
+
+### Edge Case 2: Null Attribute Values
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "attributes": {"department": null}
+  },
+  "action": "document:read",
+  "resource": {
+    "attributes": {"department": "engineering"}
+  }
+}
+
+### Edge Case 3: Complex Nested Attributes
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "attributes": {
+      "profile": {
+        "department": "engineering",
+        "location": {
+          "country": "US",
+          "city": "Seattle"
+        }
+      }
+    }
+  },
+  "action": "document:read",
+  "resource": {
+    "attributes": {
+      "restrictions": {
+        "country": "US"
+      }
+    }
+  }
+}

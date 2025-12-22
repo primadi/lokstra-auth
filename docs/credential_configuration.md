@@ -23,7 +23,7 @@ App.Config.Credentials
 
 ### 2. **Configuration Resolution**
 
-`ConfigResolver` di `01_credential/application/config_resolver.go` bertanggung jawab untuk menentukan konfigurasi mana yang digunakan:
+`ConfigResolver` di `credential/application/config_resolver.go` bertanggung jawab untuk menentukan konfigurasi mana yang digunakan:
 
 ```go
 func (r *ConfigResolver) GetEffectiveConfig(ctx, tenantID, appID) *CredentialConfig {
@@ -130,7 +130,7 @@ func (r *ConfigResolver) GetEffectiveConfig(ctx, tenantID, appID) *CredentialCon
 
 #### Get Tenant Default Config
 ```http
-GET /api/registration/config/credentials/tenants/{tenant_id}
+GET /api/auth/core/config/credentials/tenants/{tenant_id}
 ```
 
 Response:
@@ -148,7 +148,7 @@ Response:
 
 #### Update Tenant Default Config
 ```http
-PUT /api/registration/config/credentials/tenants/{tenant_id}
+PUT /api/auth/core/config/credentials/tenants/{tenant_id}
 Content-Type: application/json
 
 {
@@ -166,7 +166,7 @@ Content-Type: application/json
 
 #### Get App Config
 ```http
-GET /api/registration/config/credentials/tenants/{tenant_id}/apps/{app_id}
+GET /api/auth/core/config/credentials/tenants/{tenant_id}/apps/{app_id}
 ```
 
 Response:
@@ -185,7 +185,7 @@ Response:
 
 #### Update App Config
 ```http
-PUT /api/registration/config/credentials/tenants/{tenant_id}/apps/{app_id}
+PUT /api/auth/core/config/credentials/tenants/{tenant_id}/apps/{app_id}
 Content-Type: application/json
 
 {
@@ -290,13 +290,13 @@ func (s *APIKeyAuthService) Authenticate(ctx *request.Context, req *apikey.Authe
 
 ## 📝 Contoh Lengkap
 
-Lihat `examples/00_core/02_credential_config/main.go` untuk contoh lengkap penggunaan sistem konfigurasi credential.
+Lihat `examples/core/02_credential_config/main.go` untuk contoh lengkap penggunaan sistem konfigurasi credential.
 
 ## 🎓 Key Takeaways
 
-1. **Konfigurasi di 00_core**, bukan di 01_credential
-   - 00_core owns the configuration model
-   - 01_credential reads configuration via ConfigResolver
+1. **Konfigurasi di core**, bukan di credential
+   - core owns the configuration model
+   - credential reads configuration via ConfigResolver
 
 2. **3-Level Hierarchy**: Global → Tenant → App
    - Global: Default aman untuk semua tenant

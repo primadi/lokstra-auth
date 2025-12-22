@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	subject "github.com/primadi/lokstra-auth/03_subject"
-	authz "github.com/primadi/lokstra-auth/04_authz"
-	"github.com/primadi/lokstra-auth/04_authz/rbac"
+	authz "github.com/primadi/lokstra-auth/authz"
+	"github.com/primadi/lokstra-auth/authz/rbac"
+	identity "github.com/primadi/lokstra-auth/identity"
 )
 
 func main() {
@@ -15,36 +15,42 @@ func main() {
 
 	ctx := context.Background()
 
-	// Create RBAC evaluator with role permissions
+	// Create RBAC evaluator with role permissions (multi-tenant aware)
+	// Key format: "tenantID:appID:role" -> []permissions
 	rolePermissions := map[string][]string{
-		"admin":  {"document:*"},
-		"editor": {"document:read", "document:write"},
-		"viewer": {"document:read"},
+		"demo-tenant:demo-app:admin":  {"document:*"},
+		"demo-tenant:demo-app:editor": {"document:read", "document:write"},
+		"demo-tenant:demo-app:viewer": {"document:read"},
 	}
 	evaluator := rbac.NewEvaluator(rolePermissions)
 
-	fmt.Println("Role Permissions:")
+	fmt.Println("Role Permissions (tenant: demo-tenant, app: demo-app):")
 	fmt.Println("- admin: document:*")
 	fmt.Println("- editor: document:read, document:write")
 	fmt.Println("- viewer: document:read")
 	fmt.Println()
 
 	// Test Case 1: Admin user
-	adminIdentity := &subject.IdentityContext{
-		Subject: &subject.Subject{
-			ID:   "user-1",
-			Type: "user",
+	adminIdentity := &identity.IdentityContext{
+		Subject: &identity.Subject{
+			ID:       "user-1",
+			TenantID: "demo-tenant",
+			Type:     "user",
 		},
+		TenantID:    "demo-tenant",
+		AppID:       "demo-app",
 		Roles:       []string{"admin"},
 		Permissions: []string{},
 	}
 
 	request1 := &authz.AuthorizationRequest{
 		Subject: adminIdentity,
-		Action:  authz.Action("document:delete"),
+		Action:  authz.ActionDelete,
 		Resource: &authz.Resource{
-			Type: "document",
-			ID:   "doc-123",
+			Type:     "document",
+			ID:       "doc-123",
+			TenantID: "demo-tenant",
+			AppID:    "demo-app",
 		},
 	}
 
@@ -61,21 +67,26 @@ func main() {
 	fmt.Printf("  Reason: %s\n\n", decision1.Reason)
 
 	// Test Case 2: Editor user
-	editorIdentity := &subject.IdentityContext{
-		Subject: &subject.Subject{
-			ID:   "user-2",
-			Type: "user",
+	editorIdentity := &identity.IdentityContext{
+		Subject: &identity.Subject{
+			ID:       "user-2",
+			TenantID: "demo-tenant",
+			Type:     "user",
 		},
+		TenantID:    "demo-tenant",
+		AppID:       "demo-app",
 		Roles:       []string{"editor"},
 		Permissions: []string{},
 	}
 
 	request2 := &authz.AuthorizationRequest{
 		Subject: editorIdentity,
-		Action:  authz.Action("document:write"),
+		Action:  authz.ActionWrite,
 		Resource: &authz.Resource{
-			Type: "document",
-			ID:   "doc-456",
+			Type:     "document",
+			ID:       "doc-456",
+			TenantID: "demo-tenant",
+			AppID:    "demo-app",
 		},
 	}
 
@@ -94,10 +105,12 @@ func main() {
 	// Test Case 3: Editor trying to delete (should be denied)
 	request3 := &authz.AuthorizationRequest{
 		Subject: editorIdentity,
-		Action:  authz.Action("document:delete"),
+		Action:  authz.ActionDelete,
 		Resource: &authz.Resource{
-			Type: "document",
-			ID:   "doc-456",
+			Type:     "document",
+			ID:       "doc-456",
+			TenantID: "demo-tenant",
+			AppID:    "demo-app",
 		},
 	}
 
@@ -114,21 +127,26 @@ func main() {
 	fmt.Printf("  Reason: %s\n\n", decision3.Reason)
 
 	// Test Case 4: Viewer reading document
-	viewerIdentity := &subject.IdentityContext{
-		Subject: &subject.Subject{
-			ID:   "user-3",
-			Type: "user",
+	viewerIdentity := &identity.IdentityContext{
+		Subject: &identity.Subject{
+			ID:       "user-3",
+			TenantID: "demo-tenant",
+			Type:     "user",
 		},
+		TenantID:    "demo-tenant",
+		AppID:       "demo-app",
 		Roles:       []string{"viewer"},
 		Permissions: []string{},
 	}
 
 	request4 := &authz.AuthorizationRequest{
 		Subject: viewerIdentity,
-		Action:  authz.Action("document:read"),
+		Action:  authz.ActionRead,
 		Resource: &authz.Resource{
-			Type: "document",
-			ID:   "doc-789",
+			Type:     "document",
+			ID:       "doc-789",
+			TenantID: "demo-tenant",
+			AppID:    "demo-app",
 		},
 	}
 

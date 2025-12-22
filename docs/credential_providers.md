@@ -5,7 +5,7 @@
 Lokstra Auth mendukung 5 metode autentikasi yang bisa dikonfigurasi per tenant/app:
 
 ### 1. **Basic Authentication** ✅ Implemented
-- **Path**: `/api/cred/basic/*`
+- **Path**: `//api/auth/cred/basic/*`
 - **Service**: `BasicAuthService`
 - **Methods**: Username/Password
 - **Endpoints**:
@@ -16,7 +16,7 @@ Lokstra Auth mendukung 5 metode autentikasi yang bisa dikonfigurasi per tenant/a
 - **Use Cases**: Traditional web apps, mobile apps, internal tools
 
 ### 2. **API Key Authentication** ✅ Implemented
-- **Path**: `/api/cred/apikey/*`
+- **Path**: `//api/auth/cred/apikey/*`
 - **Service**: `APIKeyAuthService`
 - **Methods**: API Key in header
 - **Endpoints**:
@@ -25,7 +25,7 @@ Lokstra Auth mendukung 5 metode autentikasi yang bisa dikonfigurasi per tenant/a
 - **Use Cases**: Server-to-server, webhooks, background jobs, CI/CD
 
 ### 3. **OAuth2 Authentication** ✅ Implemented
-- **Path**: `/api/cred/oauth2/*`
+- **Path**: `//api/auth/cred/oauth2/*`
 - **Service**: `OAuth2AuthService`
 - **Methods**: OAuth2/OIDC with external providers
 - **Endpoints**:
@@ -36,7 +36,7 @@ Lokstra Auth mendukung 5 metode autentikasi yang bisa dikonfigurasi per tenant/a
 - **Use Cases**: Social login, enterprise SSO (SAML/OIDC)
 
 ### 4. **Passwordless Authentication** 🚧 Skeleton Only
-- **Path**: `/api/cred/passwordless/*`
+- **Path**: `//api/auth/cred/passwordless/*`
 - **Service**: `PasswordlessAuthService`
 - **Methods**: Email/SMS magic link or OTP
 - **Endpoints**:
@@ -56,7 +56,7 @@ Lokstra Auth mendukung 5 metode autentikasi yang bisa dikonfigurasi per tenant/a
 - Rate limiting
 
 ### 5. **Passkey Authentication (WebAuthn)** 🚧 Skeleton Only
-- **Path**: `/api/cred/passkey/*`
+- **Path**: `//api/auth/cred/passkey/*`
 - **Service**: `PasskeyAuthService`
 - **Methods**: FIDO2/WebAuthn (Touch ID, Face ID, security keys)
 - **Endpoints**:

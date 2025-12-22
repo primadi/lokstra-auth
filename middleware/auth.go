@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	lokstraauth "github.com/primadi/lokstra-auth"
-	subject "github.com/primadi/lokstra-auth/03_subject"
+	identity "github.com/primadi/lokstra-auth/identity"
 	"github.com/primadi/lokstra/core/request"
 )
 
@@ -100,12 +100,12 @@ func (m *AuthMiddleware) Handler() func(c *request.Context) error {
 // DefaultTokenExtractor extracts token from Authorization header
 // Format: "Bearer <token>"
 func DefaultTokenExtractor(c *request.Context) (string, error) {
-	auth := c.R.Header.Get("Authorization")
-	if auth == "" {
+	authHeader := c.R.Header.Get("Authorization")
+	if authHeader == "" {
 		return "", ErrMissingToken
 	}
 
-	parts := strings.SplitN(auth, " ", 2)
+	parts := strings.SplitN(authHeader, " ", 2)
 	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
 		return "", ErrInvalidTokenFormat
 	}
@@ -115,21 +115,20 @@ func DefaultTokenExtractor(c *request.Context) (string, error) {
 
 // DefaultErrorHandler returns 401 Unauthorized
 func DefaultErrorHandler(c *request.Context, err error) error {
-	c.Resp.WithStatus(401)
-	return c.Resp.Json(map[string]any{
+	return c.Resp.WithStatus(401).Json(map[string]any{
 		"error":   "Unauthorized",
 		"message": err.Error(),
 	})
 }
 
 // GetIdentity retrieves identity from request context
-func GetIdentity(c *request.Context) (*subject.IdentityContext, bool) {
-	identity, ok := c.Get(IdentityContextKey).(*subject.IdentityContext)
+func GetIdentity(c *request.Context) (*identity.IdentityContext, bool) {
+	identity, ok := c.Get(IdentityContextKey).(*identity.IdentityContext)
 	return identity, ok
 }
 
 // MustGetIdentity retrieves identity from context or panics
-func MustGetIdentity(c *request.Context) *subject.IdentityContext {
+func MustGetIdentity(c *request.Context) *identity.IdentityContext {
 	identity, ok := GetIdentity(c)
 	if !ok {
 		panic("identity not found in context")

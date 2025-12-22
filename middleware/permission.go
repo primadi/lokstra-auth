@@ -2,7 +2,7 @@ package middleware
 
 import (
 	lokstraauth "github.com/primadi/lokstra-auth"
-	authz "github.com/primadi/lokstra-auth/04_authz"
+	authz "github.com/primadi/lokstra-auth/authz"
 	"github.com/primadi/lokstra/core/request"
 )
 

@@ -5,22 +5,23 @@ import (
 	"errors"
 	"fmt"
 
-	credential "github.com/primadi/lokstra-auth/01_credential/domain"
-	token "github.com/primadi/lokstra-auth/02_token"
-	subject "github.com/primadi/lokstra-auth/03_subject"
-	authz "github.com/primadi/lokstra-auth/04_authz"
+	authz "github.com/primadi/lokstra-auth/authz"
+	credential "github.com/primadi/lokstra-auth/credential/domain"
+	identity "github.com/primadi/lokstra-auth/identity"
+	token "github.com/primadi/lokstra-auth/token"
+	"github.com/primadi/lokstra/core/request"
 )
 
 var (
-	ErrNoAuthenticator         = errors.New("no authenticator configured")
-	ErrNoTokenManager          = errors.New("no token manager configured")
-	ErrNoSubjectResolver       = errors.New("no subject resolver configured")
-	ErrNoContextBuilder        = errors.New("no identity context builder configured")
-	ErrNoAuthorizer            = errors.New("no authorizer configured")
-	ErrAuthenticationFailed    = errors.New("authentication failed")
-	ErrTokenGenerationFailed   = errors.New("token generation failed")
-	ErrSubjectResolutionFailed = errors.New("subject resolution failed")
-	ErrAuthorizationFailed     = errors.New("authorization check failed")
+	ErrNoAuthenticator          = errors.New("no authenticator configured")
+	ErrNoTokenManager           = errors.New("no token manager configured")
+	ErrNoIdentityResolver       = errors.New("no identity resolver configured")
+	ErrNoContextBuilder         = errors.New("no identity context builder configured")
+	ErrNoAuthorizer             = errors.New("no authorizer configured")
+	ErrAuthenticationFailed     = errors.New("authentication failed")
+	ErrTokenGenerationFailed    = errors.New("token generation failed")
+	ErrIdentityResolutionFailed = errors.New("identity resolution failed")
+	ErrAuthorizationFailed      = errors.New("authorization check failed")
 )
 
 // Auth is the main runtime object for Lokstra Auth framework
@@ -32,9 +33,9 @@ type Auth struct {
 	// Layer 2: Token Management
 	tokenManager token.TokenManager
 
-	// Layer 3: Subject Resolution
-	subjectResolver subject.SubjectResolver
-	contextBuilder  subject.IdentityContextBuilder
+	// Layer 3: Identity Resolution
+	identityResolver identity.IdentityResolver
+	contextBuilder   identity.IdentityContextBuilder
 
 	// Layer 4: Authorization
 	authorizer authz.Authorizer
@@ -90,13 +91,13 @@ func (a *Auth) SetTokenManager(manager token.TokenManager) {
 	a.tokenManager = manager
 }
 
-// SetSubjectResolver sets the subject resolver
-func (a *Auth) SetSubjectResolver(resolver subject.SubjectResolver) {
-	a.subjectResolver = resolver
+// SetIdentityResolver sets the identity resolver
+func (a *Auth) SetIdentityResolver(resolver identity.IdentityResolver) {
+	a.identityResolver = resolver
 }
 
 // SetIdentityContextBuilder sets the identity context builder
-func (a *Auth) SetIdentityContextBuilder(builder subject.IdentityContextBuilder) {
+func (a *Auth) SetIdentityContextBuilder(builder identity.IdentityContextBuilder) {
 	a.contextBuilder = builder
 }
 
@@ -131,7 +132,7 @@ type LoginResponse struct {
 	RefreshToken *token.Token
 
 	// Identity is the resolved identity context
-	Identity *subject.IdentityContext
+	Identity *identity.IdentityContext
 
 	// Metadata contains additional response metadata
 	Metadata map[string]any
@@ -139,7 +140,7 @@ type LoginResponse struct {
 
 // Login performs the complete authentication flow
 // Layer 1 -> Layer 2 -> Layer 3
-func (a *Auth) Login(ctx context.Context, request *LoginRequest) (*LoginResponse, error) {
+func (a *Auth) Login(ctx *request.Context, request *LoginRequest) (*LoginResponse, error) {
 	// Validate auth context
 	if request.AuthContext == nil {
 		return nil, errors.New("auth context is required")
@@ -192,11 +193,11 @@ func (a *Auth) Login(ctx context.Context, request *LoginRequest) (*LoginResponse
 		}
 	}
 
-	// Layer 3: Resolve subject and build identity context (optional)
-	if a.subjectResolver != nil && a.contextBuilder != nil {
-		sub, err := a.subjectResolver.Resolve(ctx, authResult.Claims)
+	// Layer 3: Resolve identity and build identity context (optional)
+	if a.identityResolver != nil && a.contextBuilder != nil {
+		sub, err := a.identityResolver.Resolve(ctx, authResult.Claims)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrSubjectResolutionFailed, err)
+			return nil, fmt.Errorf("%w: %v", ErrIdentityResolutionFailed, err)
 		}
 
 		identity, err := a.contextBuilder.Build(ctx, sub)
@@ -231,7 +232,7 @@ type VerifyResponse struct {
 	Claims token.Claims
 
 	// Identity is the resolved identity context (if requested)
-	Identity *subject.IdentityContext
+	Identity *identity.IdentityContext
 
 	// Metadata contains additional response metadata
 	Metadata map[string]any
@@ -261,10 +262,10 @@ func (a *Auth) Verify(ctx context.Context, request *VerifyRequest) (*VerifyRespo
 	}
 
 	// Layer 3: Build identity context if requested
-	if request.BuildIdentityContext && a.subjectResolver != nil && a.contextBuilder != nil {
-		sub, err := a.subjectResolver.Resolve(ctx, verifyResult.Claims)
+	if request.BuildIdentityContext && a.identityResolver != nil && a.contextBuilder != nil {
+		sub, err := a.identityResolver.Resolve(ctx, verifyResult.Claims)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrSubjectResolutionFailed, err)
+			return nil, fmt.Errorf("%w: %v", ErrIdentityResolutionFailed, err)
 		}
 
 		identity, err := a.contextBuilder.Build(ctx, sub)
@@ -294,7 +295,7 @@ func (a *Auth) Authorize(ctx context.Context, request *authz.AuthorizationReques
 }
 
 // CheckPermission is a convenience method to check a simple permission
-func (a *Auth) CheckPermission(ctx context.Context, identity *subject.IdentityContext, permission string) (bool, error) {
+func (a *Auth) CheckPermission(ctx context.Context, identity *identity.IdentityContext, permission string) (bool, error) {
 	if a.authorizer == nil {
 		return false, ErrNoAuthorizer
 	}
@@ -308,7 +309,7 @@ func (a *Auth) CheckPermission(ctx context.Context, identity *subject.IdentityCo
 }
 
 // CheckRole is a convenience method to check if identity has a role
-func (a *Auth) CheckRole(ctx context.Context, identity *subject.IdentityContext, role string) (bool, error) {
+func (a *Auth) CheckRole(ctx context.Context, identity *identity.IdentityContext, role string) (bool, error) {
 	if a.authorizer == nil {
 		return false, ErrNoAuthorizer
 	}

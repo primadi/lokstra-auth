@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "files": {
+    "permission_composition_service.go": {
+      "filename": "permission_composition_service.go",
+      "checksum": "a890d00c9a77262055d92fdc26efb3698af39ed86e48fab5997194b4c76b5ebf",
+      "annotations": 7,
+      "last_scan": "2025-12-16T12:18:40.4320811+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-16T12:18:40.4320811+07:00"
+    },
+    "permission_service.go": {
+      "filename": "permission_service.go",
+      "checksum": "046fcca15da74fc9d9942b2fa2b84f54f5c809203c71ff7c4b4c4412df540be1",
+      "annotations": 7,
+      "last_scan": "2025-12-12T17:43:40.3061539+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-12T17:43:40.3061539+07:00"
+    },
+    "role_permission_service.go": {
+      "filename": "role_permission_service.go",
+      "checksum": "54656ba50b49da89512eb540a03a6eafab21fd8b485e361bb55d300715fbf48c",
+      "annotations": 7,
+      "last_scan": "2025-12-12T17:43:40.3061539+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-12T17:43:40.3061539+07:00"
+    },
+    "role_service.go": {
+      "filename": "role_service.go",
+      "checksum": "8678e796c919ea3225277e3823c72b35a52b9c241a6168df9ed05064590a5c12",
+      "annotations": 7,
+      "last_scan": "2025-12-12T17:43:40.3061539+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-12T17:43:40.3061539+07:00"
+    },
+    "user_permission_service.go": {
+      "filename": "user_permission_service.go",
+      "checksum": "9dfbb48ad3dbc1ad376b1709f2bdf73da3f4dc98a0fd453ce2ea867b071f9bf7",
+      "annotations": 6,
+      "last_scan": "2025-12-12T17:43:40.3061539+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-12T17:43:40.3061539+07:00"
+    },
+    "user_role_service.go": {
+      "filename": "user_role_service.go",
+      "checksum": "6ee9bf279a809155a4a37febf840cb3e83b466654db672767db26c54c126dd97",
+      "annotations": 6,
+      "last_scan": "2025-12-12T17:43:40.3061539+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-12T17:43:40.3061539+07:00"
+    }
+  },
+  "updated_at": "2025-12-19T04:51:18.4722155+07:00",
+  "generated_checksum": "f823d9bd7c0a66ea2fb6145710fc0f72c65b1d508f6d7f9fdd033e1ac0b83780"
+}

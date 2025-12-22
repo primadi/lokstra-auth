@@ -55,18 +55,18 @@ All 6 phases of multi-tenant implementation are complete:
 ```go
 import (
     lokstraauth "github.com/primadi/lokstra-auth"
-    credential "github.com/primadi/lokstra-auth/01_credential"
-    "github.com/primadi/lokstra-auth/01_credential/basic"
-    "github.com/primadi/lokstra-auth/02_token/jwt"
-    "github.com/primadi/lokstra-auth/03_subject/simple"
-    "github.com/primadi/lokstra-auth/04_authz/rbac"
+    credential "github.com/primadi/lokstra-auth/credential"
+    "github.com/primadi/lokstra-auth/credential/basic"
+    "github.com/primadi/lokstra-auth/token/jwt"
+    "github.com/primadi/lokstra-auth/identity/simple"
+    "github.com/primadi/lokstra-auth/authz/rbac"
 )
 
 // Build auth runtime
 auth := lokstraauth.NewBuilder().
     WithAuthenticator("basic", basic.NewAuthenticator(userProvider)).
     WithTokenManager(jwt.NewManager(jwt.DefaultConfig("secret"))).
-    WithSubjectResolver(simple.NewResolver()).
+    WithIdentityResolver(simple.NewResolver()).
     WithIdentityContextBuilder(simple.NewContextBuilder(
         roleProvider,
         permissionProvider,  // Required!
@@ -136,11 +136,11 @@ See **[MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)** for complete migration instruct
 All examples in `examples/` directory:
 
 ### Working Examples
-- ✅ `examples/01_credential/01_basic/` - Multi-tenant basic auth
-- ✅ `examples/01_credential/02_multi_auth/` - Multiple authenticators  
-- ✅ `examples/01_credential/03_oauth2/` - OAuth2 authentication
-- ✅ `examples/01_credential/04_passwordless/` - Passwordless auth (magic link & OTP)
-- ✅ `examples/01_credential/05_apikey/` - API Key generation & authentication
+- ✅ `examples/credential/01_basic/` - Multi-tenant basic auth
+- ✅ `examples/credential/02_multi_auth/` - Multiple authenticators  
+- ✅ `examples/credential/03_oauth2/` - OAuth2 authentication
+- ✅ `examples/credential/04_passwordless/` - Passwordless auth (magic link & OTP)
+- ✅ `examples/credential/05_apikey/` - API Key generation & authentication
 - ✅ `examples/services/01_multi_tenant_management/` - Service layer demo
 
 **All 6 working examples compile and run successfully!**
@@ -148,13 +148,13 @@ All examples in `examples/` directory:
 ### Examples Needing Manual Update
 The following examples have compile errors and need updates based on MIGRATION_GUIDE.md:
 
-- ⚠️ `examples/01_credential/05_apikey/` - Add tenantID/appID to GenerateKey()
-- ⚠️ `examples/01_credential/05_apikey/` - Add tenantID/appID to GenerateKey()
-- ⚠️ `examples/01_credential/06_passkey/` - Add tenantID to BeginRegistration/BeginLogin()
-- ⚠️ `examples/01_credential/07_registration/` - Add AuthContext to Authenticate()
-- ⚠️ `examples/03_subject/03_cached_store/` - Update cache methods with tenant/app params
-- ⚠️ `examples/04_authz/02_abac/` - Update AttributeProvider with tenantID parameter
-- ⚠️ `examples/04_authz/03_acl/` - Update ACL manager calls with tenant/app parameters
+- ⚠️ `examples/credential/05_apikey/` - Add tenantID/appID to GenerateKey()
+- ⚠️ `examples/credential/05_apikey/` - Add tenantID/appID to GenerateKey()
+- ⚠️ `examples/credential/06_passkey/` - Add tenantID to BeginRegistration/BeginLogin()
+- ⚠️ `examples/credential/07_registration/` - Add AuthContext to Authenticate()
+- ⚠️ `examples/rbac/03_cached_store/` - Update cache methods with tenant/app params
+- ⚠️ `examples/authz/02_abac/` - Update AttributeProvider with tenantID parameter
+- ⚠️ `examples/authz/03_acl/` - Update ACL manager calls with tenant/app parameters
 - ⚠️ `examples/complete/*` - Comprehensive updates needed
 
 **Recommendation**: Use working examples and MIGRATION_GUIDE.md as reference to update these examples as needed for your use case.
@@ -183,13 +183,13 @@ All in-memory stores use `sync.RWMutex` for concurrent access.
 ### Run Working Examples
 ```bash
 # Basic multi-tenant auth
-go run examples/01_credential/01_basic/main.go
+go run examples/credential/01_basic/main.go
 
 # Multiple authenticators
-go run examples/01_credential/02_multi_auth/main.go
+go run examples/credential/02_multi_auth/main.go
 
 # OAuth2
-go run examples/01_credential/03_oauth2/main.go
+go run examples/credential/03_oauth2/main.go
 
 # Service layer management
 go run examples/services/01_multi_tenant_management/main.go

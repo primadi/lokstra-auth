@@ -1,0 +1,398 @@
+### Bootstrap System - Super Admin Login & Initial Setup
+
+@baseUrl = http://localhost:9090/api/auth
+@contentType = application/json
+
+# =============================================================================
+# BOOTSTRAP CREDENTIALS (Auto-created on first run)
+# =============================================================================
+
+@bootstrapTenantId = system
+@bootstrapAppId = admin-console
+@bootstrapUsername = admin
+@bootstrapPassword = Admin123!@#
+@superAdminToken = {{login_super_admin.response.body.access_token}}
+
+# =============================================================================
+# STEP 1: LOGIN AS SUPER ADMIN
+# =============================================================================
+
+### 1. Login Super Admin (Bootstrap Credentials)
+# @name login_super_admin
+POST {{baseUrl}}/cred/basic/authenticate
+Content-Type: {{contentType}}
+
+{
+  "auth_context": {
+    "tenant_id": "{{bootstrapTenantId}}",
+    "app_id": "{{bootstrapAppId}}"
+  },
+  "username": "{{bootstrapUsername}}",
+  "password": "{{bootstrapPassword}}"
+}
+
+### 2. Verify Super Admin Token
+GET {{baseUrl}}/token/verify
+Authorization: Bearer {{superAdminToken}}
+
+### 3. Check Super Admin Identity
+GET {{baseUrl}}/subject/identity
+Authorization: Bearer {{superAdminToken}}
+
+# =============================================================================
+# STEP 2: CREATE FIRST REAL TENANT
+# =============================================================================
+
+@newTenantId = acme-corp
+@newAppId = web-portal
+
+### 4. Create First Real Tenant
+# @name create_tenant
+POST {{baseUrl}}/core/tenants
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "id": "{{newTenantId}}",
+  "name": "Acme Corporation",
+  "settings": {
+    "max_users": 100,
+    "max_apps": 10,
+    "allowed_auth_methods": ["basic", "oauth2"]
+  },
+  "metadata": {
+    "industry": "Technology",
+    "region": "US-West"
+  }
+}
+
+### 5. Get Tenant Details
+GET {{baseUrl}}/core/tenants/{{newTenantId}}
+Authorization: Bearer {{superAdminToken}}
+
+### 6. List All Tenants (Should show both system and acme-corp)
+GET {{baseUrl}}/core/tenants
+Authorization: Bearer {{superAdminToken}}
+
+# =============================================================================
+# STEP 3: CREATE APP FOR NEW TENANT
+# =============================================================================
+
+### 7. Create Web Portal App
+# @name create_app
+POST {{baseUrl}}/core/tenants/{{newTenantId}}/apps
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "id": "{{newAppId}}",
+  "name": "Web Portal",
+  "type": "web",
+  "config": {
+    "enable_basic": true,
+    "enable_oauth2": false,
+    "enable_apikey": true
+  },
+  "metadata": {
+    "description": "Main web application"
+  }
+}
+
+### 8. Get App Details
+GET {{baseUrl}}/core/tenants/{{newTenantId}}/apps/{{newAppId}}
+Authorization: Bearer {{superAdminToken}}
+
+### 9. List Apps for Tenant
+GET {{baseUrl}}/core/tenants/{{newTenantId}}/apps
+Authorization: Bearer {{superAdminToken}}
+
+# =============================================================================
+# STEP 4: CREATE ADMIN USER FOR NEW TENANT
+# =============================================================================
+
+@newUserId = usr-alice
+@newUserPassword = AliceSecure123!@#
+
+### 10. Create Admin User for Acme Corp
+# @name create_user
+POST {{baseUrl}}/core/tenants/{{newTenantId}}/users
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "id": "{{newUserId}}",
+  "username": "alice",
+  "email": "alice@acme.com",
+  "full_name": "Alice Administrator",
+  "password": "{{newUserPassword}}"
+}
+
+### 11. Get User Details
+GET {{baseUrl}}/core/tenants/{{newTenantId}}/users/{{newUserId}}
+Authorization: Bearer {{superAdminToken}}
+
+### 12. Grant App Access to User
+POST {{baseUrl}}/core/tenants/{{newTenantId}}/users/{{newUserId}}/apps/{{newAppId}}
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "status": "active"
+}
+
+# =============================================================================
+# STEP 5: CREATE ADMIN ROLE FOR NEW TENANT
+# =============================================================================
+
+@adminRoleId = role-admin
+
+### 13. Create Admin Role
+# @name create_role
+POST {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/roles
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "id": "{{adminRoleId}}",
+  "name": "Administrator",
+  "description": "Full access to tenant resources"
+}
+
+### 14. Create Permissions
+POST {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/permissions
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "id": "perm-tenant-manage",
+  "resource": "tenant",
+  "action": "*",
+  "description": "Manage tenant settings"
+}
+
+###
+POST {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/permissions
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "id": "perm-user-manage",
+  "resource": "user",
+  "action": "*",
+  "description": "Manage users"
+}
+
+###
+POST {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/permissions
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "id": "perm-app-manage",
+  "resource": "app",
+  "action": "*",
+  "description": "Manage applications"
+}
+
+### 15. Assign Permissions to Admin Role
+POST {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/roles/{{adminRoleId}}/permissions
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "permission_id": "perm-tenant-manage"
+}
+
+###
+POST {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/roles/{{adminRoleId}}/permissions
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "permission_id": "perm-user-manage"
+}
+
+###
+POST {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/roles/{{adminRoleId}}/permissions
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "permission_id": "perm-app-manage"
+}
+
+### 16. Assign Admin Role to Alice
+POST {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/users/{{newUserId}}/roles
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "role_id": "{{adminRoleId}}"
+}
+
+### 17. Verify Alice's Roles
+GET {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/users/{{newUserId}}/roles
+Authorization: Bearer {{superAdminToken}}
+
+### 18. Verify Alice's Permissions (Direct + Inherited from Role)
+GET {{baseUrl}}/subject/tenants/{{newTenantId}}/apps/{{newAppId}}/users/{{newUserId}}/permissions
+Authorization: Bearer {{superAdminToken}}
+
+# =============================================================================
+# STEP 6: TEST LOGIN AS NEW TENANT ADMIN
+# =============================================================================
+
+### 19. Login as Alice (New Tenant Admin)
+# @name login_alice
+POST {{baseUrl}}/cred/basic/authenticate
+Content-Type: {{contentType}}
+
+{
+  "auth_context": {
+    "tenant_id": "{{newTenantId}}",
+    "app_id": "{{newAppId}}"
+  },
+  "username": "alice",
+  "password": "{{newUserPassword}}"
+}
+
+@aliceToken = {{login_alice.response.body.access_token}}
+
+### 20. Verify Alice's Identity
+GET {{baseUrl}}/subject/identity
+Authorization: Bearer {{aliceToken}}
+
+### 21. Alice Creates New User in Her Tenant
+POST {{baseUrl}}/core/tenants/{{newTenantId}}/users
+Authorization: Bearer {{aliceToken}}
+Content-Type: {{contentType}}
+
+{
+  "username": "bob",
+  "email": "bob@acme.com",
+  "full_name": "Bob Developer",
+  "password": "BobSecure123!"
+}
+
+# =============================================================================
+# STEP 7: (OPTIONAL) DISABLE BOOTSTRAP TENANT
+# =============================================================================
+
+### 22. Check Bootstrap Status
+GET {{baseUrl}}/admin/bootstrap/status
+Authorization: Bearer {{superAdminToken}}
+
+### 23. Disable Bootstrap Tenant (After First Real Tenant Created)
+POST {{baseUrl}}/admin/bootstrap/disable
+Authorization: Bearer {{superAdminToken}}
+
+### 24. Verify Bootstrap Tenant is Suspended
+GET {{baseUrl}}/core/tenants/{{bootstrapTenantId}}
+Authorization: Bearer {{superAdminToken}}
+
+### 25. Try Login to Bootstrap Tenant (Should Fail After Disable)
+POST {{baseUrl}}/cred/basic/authenticate
+Content-Type: {{contentType}}
+
+{
+  "auth_context": {
+    "tenant_id": "{{bootstrapTenantId}}",
+    "app_id": "{{bootstrapAppId}}"
+  },
+  "username": "{{bootstrapUsername}}",
+  "password": "{{bootstrapPassword}}"
+}
+
+# =============================================================================
+# STEP 8: CHANGE SUPER ADMIN PASSWORD (SECURITY)
+# =============================================================================
+
+### 26. Change Super Admin Password (IMPORTANT!)
+PUT {{baseUrl}}/core/tenants/{{bootstrapTenantId}}/users/super-admin/password
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "old_password": "{{bootstrapPassword}}",
+  "new_password": "NewSuperSecure456!@#$%"
+}
+
+### 27. Login with New Password
+POST {{baseUrl}}/cred/basic/authenticate
+Content-Type: {{contentType}}
+
+{
+  "auth_context": {
+    "tenant_id": "{{bootstrapTenantId}}",
+    "app_id": "{{bootstrapAppId}}"
+  },
+  "username": "{{bootstrapUsername}}",
+  "password": "NewSuperSecure456!@#$%"
+}
+
+# =============================================================================
+# VERIFICATION WORKFLOW
+# =============================================================================
+
+### Complete Verification Checklist:
+
+# ✅ Step 1: Super admin can login
+# ✅ Step 2: Super admin can create tenant
+# ✅ Step 3: Super admin can create app for tenant
+# ✅ Step 4: Super admin can create user for tenant
+# ✅ Step 5: Super admin can create roles and permissions
+# ✅ Step 6: New tenant admin can login
+# ✅ Step 7: New tenant admin has permissions
+# ✅ Step 8: Bootstrap tenant can be disabled
+# ✅ Step 9: Super admin password can be changed
+
+# =============================================================================
+# EDGE CASES
+# =============================================================================
+
+### Edge Case 1: Login with Wrong Bootstrap Password (Should Fail)
+POST {{baseUrl}}/cred/basic/authenticate
+Content-Type: {{contentType}}
+
+{
+  "auth_context": {
+    "tenant_id": "{{bootstrapTenantId}}",
+    "app_id": "{{bootstrapAppId}}"
+  },
+  "username": "{{bootstrapUsername}}",
+  "password": "WrongPassword"
+}
+
+### Edge Case 2: Create Tenant with Duplicate ID (Should Fail)
+POST {{baseUrl}}/core/tenants
+Authorization: Bearer {{superAdminToken}}
+Content-Type: {{contentType}}
+
+{
+  "id": "{{newTenantId}}",
+  "name": "Duplicate Tenant"
+}
+
+### Edge Case 3: Non-Super Admin Tries to Create Tenant (Should Fail)
+POST {{baseUrl}}/core/tenants
+Authorization: Bearer {{aliceToken}}
+Content-Type: {{contentType}}
+
+{
+  "id": "another-tenant",
+  "name": "Unauthorized Tenant"
+}
+
+### Edge Case 4: Access Bootstrap Tenant After Disable (Should Fail)
+# Run after Step 23 (disable bootstrap)
+POST {{baseUrl}}/cred/basic/authenticate
+Content-Type: {{contentType}}
+
+{
+  "auth_context": {
+    "tenant_id": "{{bootstrapTenantId}}",
+    "app_id": "{{bootstrapAppId}}"
+  },
+  "username": "{{bootstrapUsername}}",
+  "password": "{{bootstrapPassword}}"
+}

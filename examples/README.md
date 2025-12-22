@@ -7,14 +7,14 @@ This folder contains usage examples for the Lokstra Auth framework, organized by
 ```
 examples/
 ├── complete/              # ⭐ START HERE - Complete runnable examples
-│   ├── 00_core/          # Core services (tenant, app, config)
+│   ├── core/          # Core services (tenant, app, config)
 │   ├── 01_basic_flow/    # Complete auth flow
 │   └── 02_multi_auth/    # Multiple auth methods
 │
-├── 01_credential/         # Layer 1: Authentication methods
-├── 02_token/             # Layer 2: Token management
-├── 03_subject/           # Layer 3: Subject resolution
-├── 04_authz/             # Layer 4: Authorization
+├── credential/         # Layer 1: Authentication methods
+├── token/             # Layer 2: Token management
+├── rbac/           # Layer 3: Subject resolution
+├── authz/             # Layer 4: Authorization
 ├── middleware/           # HTTP middleware examples
 └── services/             # Service integration examples
 ```
@@ -27,7 +27,7 @@ examples/
 
 ```bash
 # Understand deployment modes (RECOMMENDED FIRST!)
-go run ./examples/complete/00_deployment/main.go
+go run ./examples/01_deployment/main.go
 ```
 
 > **Note**: The framework now uses `@RouterService` annotations with auto-wiring.  
@@ -47,7 +47,7 @@ go run ./examples/complete/00_deployment/main.go
 
 > **Note**: Additional examples being redesigned for annotation-based architecture (`@RouterService`, `@Inject`)
 
-### 🔐 `/01_credential` - Layer 1: Authentication
+### 🔐 `/credential` - Layer 1: Authentication
 
 **Status**: 🚧 Being updated to new layered architecture (application/domain/infrastructure)
 
@@ -63,9 +63,9 @@ go run ./examples/complete/00_deployment/main.go
 
 **Best for**: Understanding specific auth methods
 
-> For now, see credential configuration in `/complete/00_core/02_credential_config/`
+> For now, see credential configuration in `/complete/core/02_credential_config/`
 
-### 🎫 `/02_token` - Layer 2: Token Management
+### 🎫 `/token` - Layer 2: Token Management
 
 **Purpose**: Token generation, verification, and storage
 
@@ -76,7 +76,7 @@ go run ./examples/complete/00_deployment/main.go
 
 **Best for**: Token lifecycle management
 
-### 👤 `/03_subject` - Layer 3: Subject Resolution
+### 👤 `/subject` - Layer 3: Subject Resolution
 
 **Purpose**: Identity context building and enrichment
 
@@ -87,7 +87,7 @@ go run ./examples/complete/00_deployment/main.go
 
 **Best for**: Identity management patterns
 
-### 🔒 `/04_authz` - Layer 4: Authorization
+### 🔒 `/authz` - Layer 4: Authorization
 
 **Purpose**: Permission and policy evaluation
 
@@ -113,7 +113,7 @@ go run ./examples/complete/00_deployment/main.go
 
 ### Path 1: Quick Start (Recommended)
 
-1. **Deployment** → `complete/00_deployment` - ⭐ START HERE
+1. **Deployment** → `01_deployment` - ⭐ START HERE
 
 **Learn**:
 - How `lokstra.Bootstrap()` works
@@ -123,9 +123,9 @@ go run ./examples/complete/00_deployment/main.go
 
 ### Path 2: Understanding the Architecture
 
-1. **Framework Code** → Read `/00_core`, `/01_credential`, etc.
+1. **Framework Code** → Read `/core`, `/credential`, etc.
 2. **Documentation** → See `/docs` folder
-3. **Deployment** → `complete/00_deployment`
+3. **Deployment** → `01_deployment`
 
 **Topics to explore**:
 - Layered architecture (domain/application/infrastructure)
@@ -138,7 +138,7 @@ go run ./examples/complete/00_deployment/main.go
 ### Path 3: Production Deployment
 
 **For understanding deployment strategies**:
-1. `complete/00_deployment` - See all 3 deployment modes
+1. `01_deployment` - See all 3 deployment modes
 2. Read `docs/deployment.md` - Production deployment guide
 3. Study `config/deployment.yaml` - Configuration structure
 
@@ -257,7 +257,7 @@ package main
 
 import (
     "fmt"
-    coredomain "github.com/primadi/lokstra-auth/00_core/domain"
+    coredomain "github.com/primadi/lokstra-auth/core/domain"
 )
 
 func main() {
@@ -285,10 +285,10 @@ go run ./examples/complete/my-example/main.go
 
 | Example | Category | Layer | Complexity | Status |
 |---------|----------|-------|------------|--------|
-| complete/00_deployment | Deployment | - | ⭐⭐⭐ | ✅ |
-| 02_token/* | Token | 2 | ⭐⭐ | ✅ |
-| 03_subject/* | Subject | 3 | ⭐⭐ | ✅ |
-| 04_authz/* | Authz | 4 | ⭐⭐ | ✅ |
+| 01_deployment | Deployment | - | ⭐⭐⭐ | ✅ |
+| token/* | Token | 2 | ⭐⭐ | ✅ |
+| rbac/* | Subject | 3 | ⭐⭐ | ✅ |
+| authz/* | Authz | 4 | ⭐⭐ | ✅ |
 
 Legend:
 - ✅ Working examples

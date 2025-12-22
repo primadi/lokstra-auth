@@ -3,7 +3,7 @@
 ## ✅ Completed Tasks
 
 ### 1. Core PostgreSQL Store Implementation
-**File**: `00_core/infrastructure/repository/store_postgres.go`
+**File**: `core/infrastructure/repository/store_postgres.go`
 
 Implemented PostgreSQL versions of all store interfaces:
 
@@ -22,7 +22,7 @@ Implemented PostgreSQL versions of all store interfaces:
 - Support for composite primary keys (tenant_id + id)
 
 ### 2. Database Schema
-**File**: `00_core/infrastructure/repository/db_schema.sql`
+**File**: `core/infrastructure/repository/db_schema.sql`
 
 Complete PostgreSQL schema with:
 
@@ -44,7 +44,7 @@ Complete PostgreSQL schema with:
 - AppKeys: tenant_app, key_id, prefix, user_id, revoked, environment
 
 ### 3. Database Migration Utilities
-**File**: `00_core/infrastructure/repository/db_migration.go`
+**File**: `core/infrastructure/repository/db_migration.go`
 
 Database connection and migration helpers:
 
@@ -112,7 +112,7 @@ Created complete working example:
 ## 📁 Files Created
 
 ```
-00_core/infrastructure/repository/
+core/infrastructure/repository/
 ├── store_postgres.go         (New - 1,400+ lines)
 ├── db_schema.sql             (New - 350+ lines)
 ├── db_migration.go           (New - 150+ lines)
@@ -178,7 +178,7 @@ if err := stores.Tenant.Create(ctx, tenant); err != nil {
 ### Using psql
 ```bash
 createdb lokstra_auth
-psql -d lokstra_auth -f 00_core/infrastructure/repository/db_schema.sql
+psql -d lokstra_auth -f core/infrastructure/repository/db_schema.sql
 ```
 
 ### Using Docker

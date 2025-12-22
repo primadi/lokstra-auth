@@ -1,11 +1,12 @@
 module github.com/primadi/lokstra-auth
 
-go 1.25.2
+go 1.25
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
-	github.com/primadi/lokstra v0.4.6
-	golang.org/x/crypto v0.45.0
+	github.com/google/uuid v1.6.0
+	github.com/primadi/lokstra v0.9.0
+	golang.org/x/crypto v0.46.0
 )
 
 require (
@@ -20,13 +21,13 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
-	github.com/redis/go-redis/v9 v9.17.0 // indirect
+	github.com/redis/go-redis/v9 v9.17.2 // indirect
 	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

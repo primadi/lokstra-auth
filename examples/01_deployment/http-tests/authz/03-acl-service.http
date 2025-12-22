@@ -1,0 +1,639 @@
+### ACL (Access Control List) Service API Tests
+### Handles resource-level access control with explicit permissions
+@baseUrl = http://localhost:9090/api/auth/authz
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+
+# Prerequisites:
+# 1. User must be authenticated
+# 2. Resources must exist
+# 3. ACL permissions must be configured per resource
+
+# =============================================================================
+# VARIABLES
+# =============================================================================
+
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+@resourceType = document
+@resourceId = doc-123
+@userId = usr-001
+
+# =============================================================================
+# ACL PERMISSION MANAGEMENT
+# =============================================================================
+
+### 1. Grant Permission to User
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "{{resourceType}}",
+  "resource_id": "{{resourceId}}",
+  "principal": {
+    "type": "user",
+    "id": "{{userId}}"
+  },
+  "permissions": ["read", "write"],
+  "granted_by": "usr-admin"
+}
+
+### 2. Grant Permission to Role
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "{{resourceType}}",
+  "resource_id": "{{resourceId}}",
+  "principal": {
+    "type": "role",
+    "id": "editor"
+  },
+  "permissions": ["read", "write", "update"]
+}
+
+### 3. Grant Permission to Everyone (Public)
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "{{resourceType}}",
+  "resource_id": "doc-public",
+  "principal": {
+    "type": "public",
+    "id": "*"
+  },
+  "permissions": ["read"]
+}
+
+### 4. Grant Wildcard Permission
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "{{resourceType}}",
+  "resource_id": "{{resourceId}}",
+  "principal": {
+    "type": "user",
+    "id": "usr-owner"
+  },
+  "permissions": ["*"]
+}
+
+### 5. Grant Permission with Expiration
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "{{resourceType}}",
+  "resource_id": "{{resourceId}}",
+  "principal": {
+    "type": "user",
+    "id": "usr-temp"
+  },
+  "permissions": ["read"],
+  "expires_at": "2025-12-31T23:59:59Z"
+}
+
+### 6. Revoke Permission from User
+POST {{baseUrl}}/acl/revoke
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "{{resourceType}}",
+  "resource_id": "{{resourceId}}",
+  "principal": {
+    "type": "user",
+    "id": "usr-temp"
+  },
+  "permissions": ["write"]
+}
+
+### 7. Revoke All Permissions from User
+POST {{baseUrl}}/acl/revoke
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "{{resourceType}}",
+  "resource_id": "{{resourceId}}",
+  "principal": {
+    "type": "user",
+    "id": "usr-removed"
+  },
+  "permissions": ["*"]
+}
+
+# =============================================================================
+# ACL QUERY & INSPECTION
+# =============================================================================
+
+### 8. Get ACL for Resource
+GET {{baseUrl}}/acl?resource_type={{resourceType}}&resource_id={{resourceId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 9. Get User's Permissions on Resource
+GET {{baseUrl}}/acl/permissions?resource_type={{resourceType}}&resource_id={{resourceId}}&user_id={{userId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 10. Check Specific Permission
+GET {{baseUrl}}/acl/check?resource_type={{resourceType}}&resource_id={{resourceId}}&user_id={{userId}}&permission=write
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 11. List All Users with Access to Resource
+GET {{baseUrl}}/acl/principals?resource_type={{resourceType}}&resource_id={{resourceId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 12. List All Resources User Can Access
+GET {{baseUrl}}/acl/resources?user_id={{userId}}&resource_type={{resourceType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 13. Get Effective Permissions (User + Roles)
+GET {{baseUrl}}/acl/effective?resource_type={{resourceType}}&resource_id={{resourceId}}&user_id={{userId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# AUTHORIZATION CHECKS
+# =============================================================================
+
+### 14. Check Permission - Direct User Grant
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "{{userId}}",
+    "roles": []
+  },
+  "action": "document:write",
+  "resource": {
+    "type": "{{resourceType}}",
+    "id": "{{resourceId}}"
+  }
+}
+
+### 15. Check Permission - Via Role
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-002",
+    "roles": ["editor"]
+  },
+  "action": "document:update",
+  "resource": {
+    "type": "{{resourceType}}",
+    "id": "{{resourceId}}"
+  }
+}
+
+### 16. Check Permission - Public Access
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-anonymous",
+    "roles": []
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "{{resourceType}}",
+    "id": "doc-public"
+  }
+}
+
+### 17. Check Permission - Owner Wildcard
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-owner",
+    "roles": []
+  },
+  "action": "document:delete",
+  "resource": {
+    "type": "{{resourceType}}",
+    "id": "{{resourceId}}"
+  }
+}
+
+### 18. Check Permission - No Access (Should Deny)
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-no-access",
+    "roles": []
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "{{resourceType}}",
+    "id": "doc-private"
+  }
+}
+
+# =============================================================================
+# BULK OPERATIONS
+# =============================================================================
+
+### 19. Batch Grant Permissions
+POST {{baseUrl}}/acl/grant/batch
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "grants": [
+    {
+      "resource_type": "document",
+      "resource_id": "doc-001",
+      "principal": {"type": "user", "id": "usr-batch-1"},
+      "permissions": ["read"]
+    },
+    {
+      "resource_type": "document",
+      "resource_id": "doc-002",
+      "principal": {"type": "user", "id": "usr-batch-1"},
+      "permissions": ["read"]
+    },
+    {
+      "resource_type": "document",
+      "resource_id": "doc-003",
+      "principal": {"type": "user", "id": "usr-batch-1"},
+      "permissions": ["read", "write"]
+    }
+  ]
+}
+
+### 20. Batch Revoke Permissions
+POST {{baseUrl}}/acl/revoke/batch
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "revocations": [
+    {
+      "resource_type": "document",
+      "resource_id": "doc-001",
+      "principal": {"type": "user", "id": "usr-batch-1"},
+      "permissions": ["read"]
+    },
+    {
+      "resource_type": "document",
+      "resource_id": "doc-002",
+      "principal": {"type": "user", "id": "usr-batch-1"},
+      "permissions": ["read"]
+    }
+  ]
+}
+
+### 21. Batch Check Permissions
+POST {{baseUrl}}/check/batch
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-batch-1",
+    "roles": []
+  },
+  "checks": [
+    {
+      "action": "document:read",
+      "resource": {"type": "document", "id": "doc-001"}
+    },
+    {
+      "action": "document:write",
+      "resource": {"type": "document", "id": "doc-002"}
+    },
+    {
+      "action": "document:delete",
+      "resource": {"type": "document", "id": "doc-003"}
+    }
+  ]
+}
+
+# =============================================================================
+# ACL INHERITANCE & HIERARCHY
+# =============================================================================
+
+### 22. Set Parent ACL (Folder Inheritance)
+POST {{baseUrl}}/acl/inherit
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-child",
+  "parent_type": "folder",
+  "parent_id": "folder-parent",
+  "inherit": true
+}
+
+### 23. Copy ACL from One Resource to Another
+POST {{baseUrl}}/acl/copy
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "source": {
+    "resource_type": "document",
+    "resource_id": "doc-template"
+  },
+  "destination": {
+    "resource_type": "document",
+    "resource_id": "doc-new"
+  }
+}
+
+### 24. Clear All ACL for Resource
+DELETE {{baseUrl}}/acl?resource_type={{resourceType}}&resource_id=doc-to-delete
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# ACL AUDIT & HISTORY
+# =============================================================================
+
+### 25. Get ACL Change History
+GET {{baseUrl}}/acl/history?resource_type={{resourceType}}&resource_id={{resourceId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 26. Get User's Access History
+GET {{baseUrl}}/acl/history/user?user_id={{userId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 27. Audit: Who Has Access to Resource
+GET {{baseUrl}}/acl/audit?resource_type={{resourceType}}&resource_id={{resourceId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# WORKFLOW EXAMPLES
+# =============================================================================
+
+### WORKFLOW 1: Document Sharing
+# Step 1: Create document (owner gets full access automatically)
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-shared",
+  "principal": {"type": "user", "id": "usr-owner"},
+  "permissions": ["*"]
+}
+
+###
+
+# Step 2: Share with collaborator (read + write)
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-shared",
+  "principal": {"type": "user", "id": "usr-collaborator"},
+  "permissions": ["read", "write"]
+}
+
+###
+
+# Step 3: Share with viewer (read-only)
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-shared",
+  "principal": {"type": "user", "id": "usr-viewer"},
+  "permissions": ["read"]
+}
+
+###
+
+# Step 4: Check collaborator can write
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {"type": "user", "id": "usr-collaborator"},
+  "action": "document:write",
+  "resource": {"type": "document", "id": "doc-shared"}
+}
+
+###
+
+# Step 5: Revoke collaborator write access
+POST {{baseUrl}}/acl/revoke
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-shared",
+  "principal": {"type": "user", "id": "usr-collaborator"},
+  "permissions": ["write"]
+}
+
+###
+
+# Step 6: Verify collaborator can only read now
+GET {{baseUrl}}/acl/permissions?resource_type=document&resource_id=doc-shared&user_id=usr-collaborator
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### WORKFLOW 2: Folder Permissions Inheritance
+# Step 1: Set folder permissions
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "folder",
+  "resource_id": "folder-projects",
+  "principal": {"type": "role", "id": "team-lead"},
+  "permissions": ["read", "write", "delete"]
+}
+
+###
+
+# Step 2: Create document in folder (inherits permissions)
+POST {{baseUrl}}/acl/inherit
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-in-folder",
+  "parent_type": "folder",
+  "parent_id": "folder-projects",
+  "inherit": true
+}
+
+###
+
+# Step 3: Check inherited permissions work
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {"type": "user", "id": "usr-team-lead", "roles": ["team-lead"]},
+  "action": "document:delete",
+  "resource": {"type": "document", "id": "doc-in-folder"}
+}
+
+# =============================================================================
+# EDGE CASES
+# =============================================================================
+
+### Edge Case 1: Grant to Non-existent User (Should Succeed)
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-123",
+  "principal": {"type": "user", "id": "usr-future"},
+  "permissions": ["read"]
+}
+
+### Edge Case 2: Revoke Permission Never Granted
+POST {{baseUrl}}/acl/revoke
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-123",
+  "principal": {"type": "user", "id": "usr-never-had-access"},
+  "permissions": ["admin"]
+}
+
+### Edge Case 3: Empty Permissions Array
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-123",
+  "principal": {"type": "user", "id": "usr-empty"},
+  "permissions": []
+}
+
+### Edge Case 4: Conflicting Permissions (Grant + Deny)
+POST {{baseUrl}}/acl/grant
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "resource_type": "document",
+  "resource_id": "doc-conflict",
+  "principal": {"type": "user", "id": "usr-conflict"},
+  "permissions": ["read"],
+  "effect": "deny"
+}

@@ -18,7 +18,7 @@
 Buat konfigurasi default di level tenant yang enable Basic + OAuth2:
 
 ```http
-PUT /api/registration/config/credentials/tenants/tenant01
+PUT /api/auth/core/config/credentials/tenants/tenant01
 Content-Type: application/json
 
 {
@@ -58,7 +58,7 @@ Content-Type: application/json
           "user_url": "https://graph.microsoft.com/v1.0/me"
         }
       ],
-      "callback_url": "https://app.tenant01.com/api/cred/oauth2/callback",
+      "callback_url": "https://app.tenant01.com//api/auth/cred/oauth2/callback",
       "state_expiry_secs": 600,
       "session_timeout_secs": 3600
     },
@@ -73,7 +73,7 @@ Content-Type: application/json
 Jika `app01` butuh konfigurasi berbeda (misal rate limit lebih tinggi):
 
 ```http
-PUT /api/registration/config/credentials/tenants/tenant01/apps/app01
+PUT /api/auth/core/config/credentials/tenants/tenant01/apps/app01
 Content-Type: application/json
 
 {
@@ -114,10 +114,10 @@ Check apakah konfigurasi sudah benar:
 
 ```http
 # Get tenant default
-GET /api/registration/config/credentials/tenants/tenant01
+GET /api/auth/core/config/credentials/tenants/tenant01
 
 # Get app-specific (with fallback to tenant)
-GET /api/registration/config/credentials/tenants/tenant01/apps/app01
+GET /api/auth/core/config/credentials/tenants/tenant01/apps/app01
 ```
 
 Response:
@@ -163,7 +163,7 @@ package main
 import (
     "context"
     
-    coredomain "github.com/primadi/lokstra-auth/00_core/domain"
+    coredomain "github.com/primadi/lokstra-auth/core/domain"
 )
 
 func setupTenant01() {
@@ -211,7 +211,7 @@ func setupTenant01() {
                             UserURL:      "https://graph.microsoft.com/v1.0/me",
                         },
                     },
-                    CallbackURL:        "https://app.tenant01.com/api/cred/oauth2/callback",
+                    CallbackURL:        "https://app.tenant01.com//api/auth/cred/oauth2/callback",
                     StateExpirySecs:    600,
                     SessionTimeoutSecs: 3600,
                 },
@@ -228,7 +228,7 @@ func setupTenant01() {
 
 ### Basic Auth Flow
 ```
-1. User → POST /api/cred/basic/login
+1. User → POST //api/auth/cred/basic/login
    Body: { "tenant_id": "tenant01", "app_id": "app01", "username": "john", "password": "secret123" }
 
 2. BasicAuthService checks:
@@ -242,7 +242,7 @@ func setupTenant01() {
 ```
 1. User clicks "Sign in with Google"
 
-2. Frontend → GET /api/cred/oauth2/authorize?provider=google&tenant_id=tenant01&app_id=app01
+2. Frontend → GET //api/auth/cred/oauth2/authorize?provider=google&tenant_id=tenant01&app_id=app01
 
 3. OAuth2Service checks:
    - ConfigResolver.IsOAuth2Enabled("tenant01", "app01") → true ✅
@@ -274,7 +274,7 @@ Same as Google, but using Azure endpoints:
 
 ### Test Basic Auth
 ```bash
-curl -X POST http://localhost:8080/api/cred/basic/login \
+curl -X POST http://localhost:8080//api/auth/cred/basic/login \
   -H "Content-Type: application/json" \
   -d '{
     "tenant_id": "tenant01",
@@ -287,7 +287,7 @@ curl -X POST http://localhost:8080/api/cred/basic/login \
 ### Test OAuth2 Google
 ```bash
 # Get authorization URL
-curl "http://localhost:8080/api/cred/oauth2/authorize?provider=google&tenant_id=tenant01&app_id=app01"
+curl "http://localhost:8080//api/auth/cred/oauth2/authorize?provider=google&tenant_id=tenant01&app_id=app01"
 
 # User visits URL, signs in, gets redirected back with code
 # Then exchange code for token (handled automatically by callback endpoint)
@@ -296,10 +296,10 @@ curl "http://localhost:8080/api/cred/oauth2/authorize?provider=google&tenant_id=
 ### Test Configuration Check
 ```bash
 # Check tenant default config
-curl http://localhost:8080/api/registration/config/credentials/tenants/tenant01
+curl http://localhost:8080/api/auth/core/config/credentials/tenants/tenant01
 
 # Check app-specific config
-curl http://localhost:8080/api/registration/config/credentials/tenants/tenant01/apps/app01
+curl http://localhost:8080/api/auth/core/config/credentials/tenants/tenant01/apps/app01
 ```
 
 ## 5️⃣ Tips & Best Practices
@@ -345,5 +345,5 @@ Fix: Update callback_url di config DAN di provider console (Google/Azure)
 ## 📚 Referensi
 
 - [Credential Configuration Docs](./credential_configuration.md)
-- [OAuth2 Implementation Guide](./01_credential.md)
+- [OAuth2 Implementation Guide](./credential.md)
 - [Multi-Tenant Architecture](./multi_tenant_architecture.md)

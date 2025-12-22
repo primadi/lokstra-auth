@@ -1,0 +1,177 @@
+### Token Service API Tests
+### Handles token validation, refresh, and management
+@baseUrl = http://localhost:9090/api/auth/token
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+@branchId = hq-jakarta
+
+# =============================================================================
+# WORKFLOW EXAMPLES
+# =============================================================================
+
+### WORKFLOW 1: Complete Token Lifecycle
+# This workflow demonstrates the full token lifecycle:
+# 1. Login to get tokens
+# 2. Validate access token
+# 3. Refresh when access token expires
+# 4. Logout to revoke refresh token
+
+# Step 1: Login (get fresh tokens)
+# @name login
+POST http://localhost:9090/api/auth/cred/basic/login
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "username": "john.doe",
+  "password": "NewSecurePass12345!"
+}
+
+###
+
+# Step 2: Validate the access token
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "{{login.response.body.data.access_token}}"
+}
+
+###
+
+# Step 3: Use access token for API calls (simulated)
+# GET http://localhost:9090/api/auth/core/users/me
+# Content-Type: {{contentType}}
+# Authorization: Bearer {{login.response.body.data.access_token}}
+# X-Tenant-ID: {{tenantId}}
+
+###
+
+# Step 4: When access token expires, refresh it
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{login.response.body.data.refresh_token}}"
+}
+
+###
+
+# Step 5: Logout (revoke refresh token)
+POST {{baseUrl}}/revoke
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{login.response.body.data.refresh_token}}"
+}
+
+###
+
+# Step 6: Try refreshing with revoked token (should fail)
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{login.response.body.data.refresh_token}}"
+}
+
+### WORKFLOW 2: Token Rotation Best Practice
+# Best practice: Rotate refresh token on each refresh
+
+# Step 1: Initial login
+# @name initialLogin
+POST http://localhost:9090/api/auth/cred/basic/login
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "username": "john.doe",
+  "password": "NewSecurePass12345!"
+}
+
+###
+
+# Step 2: First refresh (get new access token + new refresh token)
+# @name firstRefresh
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{initialLogin.response.body.data.refresh_token}}"
+}
+
+###
+
+# Step 3: Second refresh (use NEW refresh token from step 2)
+# @name secondRefresh
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{firstRefresh.response.body.data.refresh_token}}"
+}
+
+###
+
+# Step 4: Try using OLD refresh token (should fail due to rotation)
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{initialLogin.response.body.data.refresh_token}}"
+}
+
+### WORKFLOW 3: Token Security Testing
+
+# Test 1: Cross-tenant token usage (should fail)
+# @name tenantALogin
+POST http://localhost:9090/api/auth/cred/basic/login
+Content-Type: {{contentType}}
+X-Tenant-ID: acme-corp
+X-App-ID: {{appId}}
+
+{
+  "username": "john.doe",
+  "password": "SecurePass123!"
+}
+
+###
+
+# Try using tenant A's token for tenant B
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: other-tenant
+X-App-ID: {{appId}}
+
+{
+  "token": "{{tenantALogin.response.body.data.access_token}}"
+}
+
+###
+
+# Test 2: Tampered token (should fail)
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6OTk5OTk5OTk5OX0.tampered"
+}

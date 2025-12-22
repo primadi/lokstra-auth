@@ -86,7 +86,7 @@ if err != nil {
 }
 ```
 
-**Inside JWT Manager (`02_token/jwt/manager.go`):**
+**Inside JWT Manager (`token/jwt/manager.go`):**
 ```go
 func (m *Manager) Generate(ctx context.Context, claims token.Claims) (*token.Token, error) {
     // 1. Validate multi-tenant claims
@@ -228,9 +228,9 @@ package main
 import (
     "context"
     lokstraauth "github.com/primadi/lokstra-auth"
-    "github.com/primadi/lokstra-auth/01_credential"
-    "github.com/primadi/lokstra-auth/01_credential/basic"
-    "github.com/primadi/lokstra-auth/02_token/jwt"
+    "github.com/primadi/lokstra-auth/credential"
+    "github.com/primadi/lokstra-auth/credential/basic"
+    "github.com/primadi/lokstra-auth/token/jwt"
 )
 
 func main() {

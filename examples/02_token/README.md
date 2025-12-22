@@ -253,10 +253,10 @@ config := &simple.Config{
 
 ## 📚 Learn More
 
-- [Layer 02 Token Documentation](../../02_token/README.md)
-- [JWT Token Manager](../../02_token/jwt/)
-- [Simple Token Manager](../../02_token/simple/)
-- [Token Store](../../02_token/store.go)
+- [Layer 02 Token Documentation](../../token/README.md)
+- [JWT Token Manager](../../token/jwt/)
+- [Simple Token Manager](../../token/simple/)
+- [Token Store](../../token/store.go)
 
 ---
 

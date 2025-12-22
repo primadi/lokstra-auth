@@ -39,16 +39,16 @@ go run main.go
 **Server**: `auth-server` di port `8080`
 
 **Services**:
-- `00_core`: Tenant, App, Branch, User, AppKey, CredentialConfig
-- `01_credential`: Basic, APIKey, OAuth2, Passwordless, Passkey
-- `02_token`: Token generation (future)
-- `03_subject`: Subject resolution (future)
-- `04_authz`: Authorization (future)
+- `core`: Tenant, App, Branch, User, AppKey, CredentialConfig
+- `credential`: Basic, APIKey, OAuth2, Passwordless, Passkey
+- `token`: Token generation (future)
+- `rbac`: Subject resolution (future)
+- `authz`: Authorization (future)
 
 **Endpoints**:
 ```
-http://localhost:8080/api/registration/*    # Core services
-http://localhost:8080/api/cred/*            # Credential services
+http://localhost:8080/api/auth/core/*    # Core services
+http://localhost:8080//api/auth/cred/*            # Credential services
 ```
 
 **Use Cases**:
@@ -65,8 +65,8 @@ http://localhost:8080/api/cred/*            # Credential services
 
 **Endpoints**:
 ```
-http://localhost:8081/api/registration/*    # Core services
-http://localhost:8082/api/cred/*            # Credential services
+http://localhost:8081/api/auth/core/*    # Core services
+http://localhost:8082//api/auth/cred/*            # Credential services
 ```
 
 **Use Cases**:
@@ -112,7 +112,7 @@ deployments:
 All services are auto-registered via annotations:
 
 ```go
-// @RouterService name="basic-auth-service", prefix="/api/cred/basic"
+// @RouterService name="basic-auth-service", prefix="//api/auth/cred/basic"
 type BasicAuthService struct {
     // @Inject "user-provider"
     UserProvider *service.Cached[UserProvider]

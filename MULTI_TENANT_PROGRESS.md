@@ -2,7 +2,7 @@
 
 ## Status: Phase 1 Complete ✅
 
-Package `00_core` has been created as the foundation for multi-tenant & multi-app architecture.
+Package `core` has been created as the foundation for multi-tenant & multi-app architecture.
 **Credential layer (Phase 1)** has been updated with full multi-tenant support.
 
 ## Key Features
@@ -43,7 +43,7 @@ Example: RBAC for base permissions, ABAC for ownership/department/time-based ove
 - Security best practices
 - Migration strategy
 
-### 2. Core Package (00_core)
+### 2. Core Package (core)
 Created 5 files yang menjadi foundation:
 
 #### `tenant.go`
@@ -211,7 +211,7 @@ INDEX idx_tenant_status (tenant_id, status)
 - [✅] All packages build successfully
 
 **Status:** ✅ COMPLETE
-**Build:** `go build ./01_credential/...` - SUCCESS
+**Build:** `go build ./credential/...` - SUCCESS
 
 **Changes Made:**
 1. **contract.go**
@@ -256,7 +256,7 @@ INDEX idx_tenant_status (tenant_id, status)
    - Updated `BeginRegistration()`, `FinishRegistration()` with tenantID
    - Updated `BeginLogin()`, `FinishLogin()` with tenantID and validation
 
-8. **examples/01_credential/01_basic_multitenant/** (NEW)
+8. **examples/credential/01_basic_multitenant/** (NEW)
    - Demonstrates two tenants with overlapping usernames
    - Shows tenant isolation working correctly
    - Tests cross-tenant protection
@@ -271,7 +271,7 @@ INDEX idx_tenant_status (tenant_id, status)
 **Estimated Impact:** Breaking changes di token generation/validation
 
 ### Phase 3: Update Subject Layer
-- [ ] SubjectResolver dengan tenant context
+- [ ] IdentityResolver dengan tenant context
 - [ ] ResolveForApp method untuk app-specific data
 - [ ] Cache strategy per tenant
 - [ ] Enriched subject dengan app roles
@@ -322,7 +322,7 @@ INDEX idx_tenant_status (tenant_id, status)
 ## Files Created
 
 ```
-00_core/
+core/
 ├── tenant.go       # Tenant model & TenantService interface
 ├── app.go          # App model & AppService interface
 ├── user.go         # User model & UserService interface
@@ -340,7 +340,7 @@ PROGRESS.md         # This file
 ✅ All packages compile successfully
 ```bash
 go build ./...  # SUCCESS
-go build ./00_core  # SUCCESS
+go build ./core  # SUCCESS
 ```
 
 ## Recommendation
@@ -380,4 +380,4 @@ go build ./00_core  # SUCCESS
 ---
 
 **Status**: Phase 1 Complete ✅ - Ready for Phase 2
-**Next Action**: Update `02_token` layer with tenant & app support
+**Next Action**: Update `token` layer with tenant & app support

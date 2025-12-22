@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	subject "github.com/primadi/lokstra-auth/03_subject"
-	authz "github.com/primadi/lokstra-auth/04_authz"
-	"github.com/primadi/lokstra-auth/04_authz/acl"
+	authz "github.com/primadi/lokstra-auth/authz"
+	"github.com/primadi/lokstra-auth/authz/acl"
+	identity "github.com/primadi/lokstra-auth/identity"
 )
 
 func main() {
@@ -44,8 +44,8 @@ func main() {
 	fmt.Println()
 
 	// Test Case 1: User-1 accessing team document (write)
-	user1Identity := &subject.IdentityContext{
-		Subject: &subject.Subject{
+	user1Identity := &identity.IdentityContext{
+		Subject: &identity.Subject{
 			ID:   "user-1",
 			Type: "user",
 		},
@@ -74,8 +74,8 @@ func main() {
 	fmt.Printf("  Reason: %s\n\n", decision1.Reason)
 
 	// Test Case 2: User-2 trying to delete team document (should be denied)
-	user2Identity := &subject.IdentityContext{
-		Subject: &subject.Subject{
+	user2Identity := &identity.IdentityContext{
+		Subject: &identity.Subject{
 			ID:   "user-2",
 			Type: "user",
 		},
@@ -104,8 +104,8 @@ func main() {
 	fmt.Printf("  Reason: %s\n\n", decision2.Reason)
 
 	// Test Case 3: Editor role accessing team document
-	editorIdentity := &subject.IdentityContext{
-		Subject: &subject.Subject{
+	editorIdentity := &identity.IdentityContext{
+		Subject: &identity.Subject{
 			ID:   "user-3",
 			Type: "user",
 		},

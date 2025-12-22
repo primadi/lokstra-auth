@@ -57,12 +57,12 @@ Each authenticator may define its own specific contracts:
 - **`CredentialValidator`** - Validates username/password complexity requirements
 - **`UserProvider`** - Interface for retrieving user data from storage
 
-Located in: `01_credential/basic/contract.go`
+Located in: `credential/basic/contract.go`
 
 ### Passkey Authenticator
 - **`CredentialStore`** - Manages WebAuthn credentials and user data
 
-Located in: `01_credential/passkey/store.go`
+Located in: `credential/passkey/store.go`
 
 ### Passwordless Authenticator
 - **`TokenStore`** - Manages OTP and Magic Link tokens
@@ -108,7 +108,7 @@ result, err := multi.Authenticate(ctx, credentials)
 
 ## Implementations
 
-### Basic (`01_credential/basic/`)
+### Basic (`credential/basic/`)
 
 Traditional username/password authentication with configurable password policies.
 
@@ -122,7 +122,7 @@ Traditional username/password authentication with configurable password policies
 - `CredentialValidator` - Validates password complexity
 - `UserProvider` - Retrieves user data
 
-### OAuth2 (`01_credential/oauth2/`)
+### OAuth2 (`credential/oauth2/`)
 
 OAuth2 flow implementation supporting multiple providers.
 
@@ -137,7 +137,7 @@ OAuth2 flow implementation supporting multiple providers.
 - User info fetching
 - Email verification
 
-### API Key (`01_credential/apikey/`)
+### API Key (`credential/apikey/`)
 
 API key validation for service-to-service authentication.
 
@@ -151,7 +151,7 @@ API key validation for service-to-service authentication.
 **Specific Contracts:**
 - `KeyStore` - Stores and validates API keys
 
-### Passwordless (`01_credential/passwordless/`)
+### Passwordless (`credential/passwordless/`)
 
 Email-based OTP and magic link authentication flows.
 
@@ -171,7 +171,7 @@ Email-based OTP and magic link authentication flows.
 - `TokenGenerator` - Generates random tokens
 - `TokenSender` - Sends tokens via email
 
-### Passkey (`01_credential/passkey/`)
+### Passkey (`credential/passkey/`)
 
 WebAuthn/FIDO2 implementation for passwordless authentication using biometrics or security keys.
 
@@ -188,7 +188,7 @@ WebAuthn/FIDO2 implementation for passwordless authentication using biometrics o
 ## Architecture
 
 ```
-01_credential/
+credential/
 ├── contract.go              # Core general interfaces (Credentials, Authenticator, AuthenticationResult)
 ├── basic/
 │   ├── contract.go          # Basic-specific: CredentialValidator
@@ -213,7 +213,7 @@ WebAuthn/FIDO2 implementation for passwordless authentication using biometrics o
 
 The credential layer maintains a **clean separation of concerns**:
 
-### General Contracts (`01_credential/contract.go`)
+### General Contracts (`credential/contract.go`)
 Contains only 3 interfaces that ALL authenticators must implement:
 - `Credentials` - Generic credential input
 - `Authenticator` - Authentication logic
@@ -234,7 +234,7 @@ This design ensures:
 
 ## Usage Examples
 
-See `/examples/01_credential/` folder for complete implementation examples:
+See `/examples/credential/` folder for complete implementation examples:
 
 - `01_basic/` - Username/password authentication
 - `02_multi_auth/` - Multiple authentication methods

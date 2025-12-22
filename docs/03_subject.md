@@ -47,12 +47,12 @@ Performance-optimized resolver with caching layer to reduce database queries.
 All implementations must adhere to the contracts defined in `contract.go`:
 
 ```go
-// See /03_subject/contract.go for interface definitions
+// See /rbac/contract.go for interface definitions
 ```
 
 ## Usage Examples
 
-See `/examples/03_subject` folder for implementation examples.
+See `/examples/subject` folder for implementation examples.
 
 ## API Reference
 

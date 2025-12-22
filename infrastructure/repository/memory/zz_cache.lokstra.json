@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "files": {
+    "policy_Store.go": {
+      "filename": "policy_Store.go",
+      "checksum": "4181ea682c07dd1f695e7b45c7234294eea5413e6a83c70dc89e84e716c57b62",
+      "annotations": 1,
+      "last_scan": "2025-12-12T17:43:40.2896174+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-12T17:43:40.2896174+07:00"
+    }
+  },
+  "updated_at": "2025-12-19T04:51:18.5015839+07:00",
+  "generated_checksum": "5080a9fa9d65b2ebe2d033160c2997baa9615bfbc3c95687ed8fcd2356b0c26a"
+}

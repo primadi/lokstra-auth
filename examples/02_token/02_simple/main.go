@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	token "github.com/primadi/lokstra-auth/02_token"
-	"github.com/primadi/lokstra-auth/02_token/simple"
+	token "github.com/primadi/lokstra-auth/token"
+	"github.com/primadi/lokstra-auth/token/simple"
 )
 
 func main() {

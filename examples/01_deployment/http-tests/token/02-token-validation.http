@@ -1,0 +1,239 @@
+### Token Service API Tests
+### Handles token validation, refresh, and management
+@baseUrl = http://localhost:9090/api/auth/token
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+@branchId = hq-jakarta
+
+# Prerequisites:
+# 1. Have a valid access_token from login (use credential/01-basic-auth-service.http)
+# 2. Have a valid refresh_token from login
+
+# =============================================================================
+# VARIABLES - UPDATE THESE WITH ACTUAL TOKENS
+# =============================================================================
+
+# Get these from a successful login response
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBfaWQiOiJtYWluLWFwcCIsImF1ZCI6WyJsb2tzdHJhIl0sImF1dGhfdHlwZSI6ImJhc2ljIiwiZW1haWwiOiJqb2huLmRvZUBleGFtcGxlLmNvbSIsImV4cCI6MTc2NDc4NzI0MCwiaWF0IjoxNzY0Nzg2MzQwLCJpc3MiOiJsb2tzdHJhLWF1dGgiLCJtZXRhZGF0YSI6eyJkZXBhcnRtZW50IjoiRW5naW5lZXJpbmciLCJmdWxsX25hbWUiOiJKb2huIERvZSBVUERBVEVEIiwicG9zaXRpb24iOiJTZW5pb3IgRGV2In0sInN1YiI6ImpvaG4uZG9lIiwidGVuYW50X2lkIjoiYWNtZS1jb3JwIiwidXNlcm5hbWUiOiJqb2huLmRvZSJ9.mZaFwrMoIYnt-emfpJZIUJP3jiKLzI6V62KWMQslCLo
+@refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBfaWQiOiJtYWluLWFwcCIsImF1ZCI6WyJsb2tzdHJhIl0sImV4cCI6MTc2NTM5MTA2MCwiaWF0IjoxNzY0Nzg2MjYwLCJpc3MiOiJsb2tzdHJhLWF1dGgiLCJzdWIiOiJqb2huLmRvZSIsInRlbmFudF9pZCI6ImFjbWUtY29ycCIsInR5cGUiOiJyZWZyZXNoIn0.d6tweSKMfcOJZFMWMNn8ESyEDsnIi-vqV-SugrhBm8M
+
+# =============================================================================
+# TOKEN VALIDATION
+# =============================================================================
+
+### 1. Validate Access Token - Valid Token
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "{{accessToken}}"
+}
+
+### 2. Validate Access Token - Expired Token
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDAwMDAwMDB9.expired"
+}
+
+### 3. Validate Access Token - Invalid Token
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "invalid.token.here"
+}
+
+### 4. Validate Access Token - Malformed Token
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "notavalidjwttoken"
+}
+
+### 5. Validate Access Token - Empty Token
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": ""
+}
+
+# =============================================================================
+# TOKEN REFRESH
+# =============================================================================
+
+### 6. Refresh Access Token - Valid Refresh Token
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{refreshToken}}"
+}
+
+### 7. Refresh Access Token - Invalid Refresh Token
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "invalid.refresh.token"
+}
+
+### 8. Refresh Access Token - Expired Refresh Token
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDAwMDAwMDB9.expired"
+}
+
+### 9. Refresh Access Token - Access Token (Wrong Type)
+# This should fail - refresh endpoint expects refresh_token, not access_token
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{accessToken}}"
+}
+
+### 10. Refresh Access Token - Missing Token
+POST {{baseUrl}}/refresh
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": ""
+}
+
+# =============================================================================
+# TOKEN REVOCATION (LOGOUT)
+# =============================================================================
+
+### 11. Revoke Refresh Token - Valid Token
+POST {{baseUrl}}/revoke
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{refreshToken}}"
+}
+
+### 12. Revoke Refresh Token - Already Revoked
+# Try revoking the same token again (should fail or be idempotent)
+POST {{baseUrl}}/revoke
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "{{refreshToken}}"
+}
+
+### 13. Revoke Refresh Token - Invalid Token
+POST {{baseUrl}}/revoke
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "refresh_token": "invalid.token"
+}
+
+# =============================================================================
+# TOKEN INTROSPECTION (If Implemented)
+# =============================================================================
+
+### 14. Introspect Token - Get Token Details
+POST {{baseUrl}}/introspect
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "{{accessToken}}"
+}
+
+### 15. Introspect Refresh Token
+POST {{baseUrl}}/introspect
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "{{refreshToken}}"
+}
+
+# =============================================================================
+# EDGE CASES & ERROR HANDLING
+# =============================================================================
+
+### Edge Case 1: Missing Tenant Header
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-App-ID: {{appId}}
+
+{
+  "token": "{{accessToken}}"
+}
+
+### Edge Case 2: Missing App Header
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+
+{
+  "token": "{{accessToken}}"
+}
+
+### Edge Case 3: Null Token
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": null
+}
+
+### Edge Case 4: Very Long Token
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c.extra.parts.that.should.not.be.here"
+}
+
+### Edge Case 5: Token with Special Characters
+POST {{baseUrl}}/validate
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "token": "token<script>alert('xss')</script>"
+}

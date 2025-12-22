@@ -18,10 +18,10 @@ Instead of manually wiring together authenticators, token managers, subject reso
 ```go
 import (
     lokstraauth "github.com/primadi/lokstra-auth"
-    "github.com/primadi/lokstra-auth/01_credential/basic"
-    "github.com/primadi/lokstra-auth/02_token/jwt"
-    "github.com/primadi/lokstra-auth/03_subject/simple"
-    "github.com/primadi/lokstra-auth/04_authz/rbac"
+    "github.com/primadi/lokstra-auth/credential/basic"
+    "github.com/primadi/lokstra-auth/token/jwt"
+    "github.com/primadi/lokstra-auth/identity/simple"
+    "github.com/primadi/lokstra-auth/authz/rbac"
 )
 
 auth := lokstraauth.NewBuilder().
@@ -33,7 +33,7 @@ auth := lokstraauth.NewBuilder().
     WithTokenManager(jwtManager).
     
     // Layer 3: Set subject resolution
-    WithSubjectResolver(subjectResolver).
+    WithIdentityResolver(identityResolver).
     WithIdentityContextBuilder(contextBuilder).
     
     // Layer 4: Set authorizer
@@ -145,7 +145,7 @@ builder.WithAuthenticator("oauth2", oauth2Auth)
 builder.WithTokenManager(jwtManager)
 
 // Set subject resolution
-builder.WithSubjectResolver(resolver)
+builder.WithIdentityResolver(resolver)
 builder.WithIdentityContextBuilder(builder)
 
 // Set authorizer
@@ -189,7 +189,7 @@ auth := lokstraauth.NewBuilder().
 
 ## Complete Example
 
-See `/examples/01_credential/runtime_example.go` for a complete working example.
+See `/examples/credential/runtime_example.go` for a complete working example.
 
 ## Benefits
 

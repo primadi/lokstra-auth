@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "files": {
+    "token_service.go": {
+      "filename": "token_service.go",
+      "checksum": "24d8337c9bb82181cdd983c83c05c9ffd0c632616e8bdfb146833d95822705cd",
+      "annotations": 6,
+      "last_scan": "2025-12-12T17:43:40.2966316+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-12T17:43:40.2966316+07:00"
+    }
+  },
+  "updated_at": "2025-12-19T04:51:18.4310381+07:00",
+  "generated_checksum": "51a2f7d16eefe067a496dca0006706274f7bba5bf8259eae5e930062ffb31ea8"
+}

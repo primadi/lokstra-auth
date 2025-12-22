@@ -534,8 +534,8 @@ import (
     "encoding/json"
     "net/http"
     
-    "github.com/primadi/lokstra-auth/00_core/services"
-    "github.com/primadi/lokstra-auth/01_credential/apikey"
+    "github.com/primadi/lokstra-auth/core/services"
+    "github.com/primadi/lokstra-auth/credential/apikey"
 )
 
 func main() {
@@ -603,7 +603,7 @@ func main() {
 
 ## See Also
 
-- [User API Keys](../examples/01_credential/05_apikey/) - For user-level authentication
-- [Authentication Guide](./01_credential.md) - Core authentication concepts
+- [User API Keys](../examples/credential/05_apikey/) - For user-level authentication
+- [Authentication Guide](./credential.md) - Core authentication concepts
 - [Multi-tenant Architecture](./architecture.md) - Tenant and app isolation
-- [Example: App Keys](../examples/00_core/01_app_keys/) - Complete working example
+- [Example: App Keys](../examples/core/01_app_keys/) - Complete working example

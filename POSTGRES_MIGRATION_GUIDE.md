@@ -60,7 +60,7 @@ import (
     "context"
     "log"
     
-    "github.com/primadi/lokstra-auth/00_core/infrastructure/repository"
+    "github.com/primadi/lokstra-auth/infrastructure/repository"
 )
 
 func main() {
@@ -90,7 +90,7 @@ func main() {
 **Or using psql directly:**
 
 ```bash
-psql -d lokstra_auth -f 00_core/infrastructure/repository/db_schema.sql
+psql -d lokstra_auth -f core/infrastructure/repository/db_schema.sql
 ```
 
 ### Step 3: Update Your Application Code
@@ -101,7 +101,7 @@ psql -d lokstra_auth -f 00_core/infrastructure/repository/db_schema.sql
 package main
 
 import (
-    "github.com/primadi/lokstra-auth/00_core/infrastructure/repository"
+    "github.com/primadi/lokstra-auth/infrastructure/repository"
 )
 
 func main() {
@@ -129,7 +129,7 @@ import (
     "log"
     "os"
     
-    "github.com/primadi/lokstra-auth/00_core/infrastructure/repository"
+    "github.com/primadi/lokstra-auth/infrastructure/repository"
 )
 
 func main() {
@@ -214,7 +214,7 @@ import (
     "context"
     "log"
     
-    "github.com/primadi/lokstra-auth/00_core/infrastructure/repository"
+    "github.com/primadi/lokstra-auth/infrastructure/repository"
 )
 
 func migrateData() {
@@ -385,7 +385,7 @@ If you need to rollback to in-memory stores:
 ```go
 var usePostgres = os.Getenv("USE_POSTGRES") == "true"
 
-func createStores() interface{} {
+func createStores() any {
     if usePostgres {
         db, _ := repository.NewPostgresConnection(cfg)
         factory := repository.NewPostgresStoreFactory(db)

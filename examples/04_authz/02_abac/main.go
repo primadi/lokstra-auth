@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	subject "github.com/primadi/lokstra-auth/03_subject"
-	authz "github.com/primadi/lokstra-auth/04_authz"
-	"github.com/primadi/lokstra-auth/04_authz/abac"
+	authz "github.com/primadi/lokstra-auth/authz"
+	"github.com/primadi/lokstra-auth/authz/abac"
+	identity "github.com/primadi/lokstra-auth/identity"
 )
 
 // SimpleAttributeProvider provides attributes from identity metadata
@@ -103,8 +103,8 @@ func main() {
 	fmt.Println()
 
 	// Test Case 1: Engineer accessing engineering document
-	engineerIdentity := &subject.IdentityContext{
-		Subject: &subject.Subject{
+	engineerIdentity := &identity.IdentityContext{
+		Subject: &identity.Subject{
 			ID:   "user-1",
 			Type: "user",
 		},
@@ -148,8 +148,8 @@ func main() {
 	fmt.Printf("  Reason: %s\n\n", decision1.Reason)
 
 	// Test Case 2: Manager accessing any document
-	managerIdentity := &subject.IdentityContext{
-		Subject: &subject.Subject{
+	managerIdentity := &identity.IdentityContext{
+		Subject: &identity.Subject{
 			ID:   "user-2",
 			Type: "user",
 		},
@@ -227,8 +227,8 @@ func main() {
 	fmt.Printf("  Reason: %s\n\n", decision3.Reason)
 
 	// Test Case 4: Engineer from different department
-	salesEngineer := &subject.IdentityContext{
-		Subject: &subject.Subject{
+	salesEngineer := &identity.IdentityContext{
+		Subject: &identity.Subject{
 			ID:   "user-3",
 			Type: "user",
 		},

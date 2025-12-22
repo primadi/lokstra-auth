@@ -1,0 +1,103 @@
+### User Service API Tests
+@baseUrl = http://localhost:9090/api/auth/core/tenants/{{tenantId}}/users
+@contentType = application/json
+@tenantId = acme-corp
+@userId = john.doe
+
+### 1. Create User
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+
+{
+  "id": "john.doe",
+  "username": "john.doe",
+  "email": "john.doe@example.com",
+  "metadata": {
+    "full_name": "John Doe",
+    "department": "Engineering",
+    "position": "Developer"
+  }
+}
+
+### 2. Create Admin User
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+
+{
+  "id": "admin",
+  "username": "admin",
+  "email": "admin@example.com",
+  "metadata": {
+    "full_name": "Admin User",
+    "department": "IT",
+    "position": "Administrator"
+  }
+}
+
+### 3. Get User by ID
+GET {{baseUrl}}/id/{{userId}}
+
+### 4. Get User by Username
+GET {{baseUrl}}/by-username/john.doe
+
+### 5. Get User by Email
+GET {{baseUrl}}/by-email/john.doe@example.com
+
+### 6. List All Users for Tenant
+GET {{baseUrl}}
+
+### 7. Update User
+PUT {{baseUrl}}/id/{{userId}}
+Content-Type: {{contentType}}
+
+{
+  "username": "john.doe",
+  "email": "john.doe@example.com",
+  "metadata": {
+    "full_name": "John Doe Updated",
+    "department": "Engineering",
+    "position": "Senior Developer"
+  }
+}
+
+### 8. Suspend User
+POST {{baseUrl}}/id/{{userId}}/suspend
+
+### 9. Activate User
+POST {{baseUrl}}/id/{{userId}}/activate
+
+### 10. Assign User to App
+POST {{baseUrl}}/id/{{userId}}/assign-app
+Content-Type: {{contentType}}
+
+{
+  "app_id": "main-app"
+}
+
+### 11. List User Apps
+GET {{baseUrl}}/id/{{userId}}/apps
+
+### 12. Remove User from App
+DELETE {{baseUrl}}/id/{{userId}}/remove-app
+Content-Type: {{contentType}}
+
+{
+  "app_id": "main-app"
+}
+
+### 13. Set/Reset User Password (Admin Operation)
+# Admin can set or reset user password without knowing old password
+POST {{baseUrl}}/id/{{userId}}/password
+Content-Type: {{contentType}}
+
+{
+  "password": "Helloworld@123"
+}
+
+### 14. Remove User Password (Disable Basic Auth)
+# Remove password to disable basic auth for this user
+DELETE {{baseUrl}}/id/{{userId}}/password
+
+### 15. Delete User
+DELETE {{baseUrl}}/id/{{userId}}
+

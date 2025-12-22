@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "files": {
+    "app_key_store.go": {
+      "filename": "app_key_store.go",
+      "checksum": "58be356cdb0ed6f201d395557f52b441b00a6c124e494a255c3991839de834f9",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "app_store.go": {
+      "filename": "app_store.go",
+      "checksum": "a71d59349e24298a6dcebe81c8f9b817d1438b7b0c5403b42b09753cf0d21823",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "audit_log_store.go": {
+      "filename": "audit_log_store.go",
+      "checksum": "56255934b8e8fee4b46ff11e2d4e8f9c7e0cbcf910eb3fbb8832aa52344a806d",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "branch_store.go": {
+      "filename": "branch_store.go",
+      "checksum": "33695c34cbad7ac18462b1400150fcc31a578547ffd081262f530fb4d53645c3",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "credential_provider_store.go": {
+      "filename": "credential_provider_store.go",
+      "checksum": "b41fa3ab6832d096ed3dc9a22b5d2aeea49b96e97b386e22f5393c016b54cb36",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "permission_composition_store.go": {
+      "filename": "permission_composition_store.go",
+      "checksum": "7dfe651073ad5de4c608589197112c3944de8f7b126d66452fe411ac45e4cb71",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "permission_store.go": {
+      "filename": "permission_store.go",
+      "checksum": "b1e100043a86cc2e70e52858b05d4df89fb88802c8c67c882fab7a30404dc733",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "policy_store.go": {
+      "filename": "policy_store.go",
+      "checksum": "fa0466f3821e1028f71dca9c2ae5ddccff04651e2cc44673a285f8b2e6108bc1",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "role_store.go": {
+      "filename": "role_store.go",
+      "checksum": "80772eb057638143cdebb28493e17e20af146fd79c17b6e00fbda7f29b5a78fe",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "tenant_store.go": {
+      "filename": "tenant_store.go",
+      "checksum": "19446451bf2df875e7b695b683f00210d413e9d7909d58e0f9b6f7182cefbddd",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "user_app_store.go": {
+      "filename": "user_app_store.go",
+      "checksum": "bdb5cad47672e875ceefab2f34f80c157449136b592cec2544d7dc849ecab635",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "user_identity_store.go": {
+      "filename": "user_identity_store.go",
+      "checksum": "c1c321cfaf8f29ddbd44ac73c2084ed82a7633ca0032c3c0e33b05abe2d642c5",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "user_role_store.go": {
+      "filename": "user_role_store.go",
+      "checksum": "917b1747aac80d799356f3434dcaae0bde53a54f4a9b1b26a5cfc68218deae26",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    },
+    "user_store.go": {
+      "filename": "user_store.go",
+      "checksum": "78edc175a6acd37becd6cf7dd59308731d4960da6bd1ed3e2b7ddc21f2b7caf9",
+      "annotations": 2,
+      "last_scan": "2025-12-19T02:40:39.9926051+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2025-12-19T02:40:39.9926051+07:00"
+    }
+  },
+  "updated_at": "2025-12-19T04:51:18.5414599+07:00",
+  "generated_checksum": "72c1c8f5385210c7003c147380fdb3bd5665b28c997af9f4d313d9ab16d70dee"
+}

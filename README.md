@@ -10,7 +10,7 @@ Lokstra Auth is a modular authentication and authorization framework built on to
 
 Lokstra Auth divides the authentication and authorization process into 4 independent layers:
 
-### 1. **Credential Layer** (`01_credential/`) ✅ COMPLETE
+### 1. **Credential Layer** (`credential/`) ✅ COMPLETE
 The first layer is responsible for receiving and validating credentials from various sources:
 - ✅ **Basic Auth** - Username/password with bcrypt
 - ✅ **OAuth2** - Google, GitHub, Facebook integration
@@ -19,9 +19,9 @@ The first layer is responsible for receiving and validating credentials from var
 - ✅ **Passkey** - WebAuthn/FIDO2 support
 
 **Status**: Production ready with 5 authenticator types
-**Documentation**: [01_credential/README.md](./01_credential/README.md)
+**Documentation**: [credential/README.md](./credential/README.md)
 
-### 2. **Token Layer** (`02_token/`) ✅ COMPLETE
+### 2. **Token Layer** (`token/`) ✅ COMPLETE
 The second layer manages token lifecycle and data extraction:
 - ✅ **JWT Manager** - Access + Refresh token with rotation
 - ✅ **Simple Token** - Opaque token management
@@ -30,9 +30,9 @@ The second layer manages token lifecycle and data extraction:
 - ✅ Custom token formats
 
 **Status**: Production ready with 2 token manager types
-**Documentation**: [02_token/README.md](./02_token/README.md)
+**Documentation**: [token/README.md](./token/README.md)
 
-### 3. **Subject Layer** (`03_subject/`) ✅ COMPLETE
+### 3. **Subject Layer** (`rbac/`) ✅ COMPLETE
 The third layer transforms claims into complete identity context:
 - ✅ **Simple Resolver** - Direct claim to identity mapping
 - ✅ **Enriched Resolver** - Identity enrichment with external data
@@ -42,9 +42,9 @@ The third layer transforms claims into complete identity context:
 - ✅ Multi-source data aggregation
 
 **Status**: Production ready with 3 resolver types
-**Documentation**: [03_subject/README.md](./03_subject/README.md)
+**Documentation**: [rbac/README.md](./rbac/README.md)
 
-### 4. **Authorization Layer** (`04_authz/`) ✅ COMPLETE
+### 4. **Authorization Layer** (`authz/`) ✅ COMPLETE
 The fourth layer performs access evaluation and policy enforcement:
 - ✅ **RBAC** - Role-Based Access Control with wildcard support
 - ✅ **ABAC** - Attribute-Based Access Control with rules
@@ -54,7 +54,7 @@ The fourth layer performs access evaluation and policy enforcement:
 - ✅ Thread-safe implementations
 
 **Status**: Production ready with 4 authorization models
-**Documentation**: [04_authz/README.md](./04_authz/README.md)
+**Documentation**: [authz/README.md](./authz/README.md)
 
 ## 🚀 Quick Start
 
@@ -74,11 +74,11 @@ import (
     "fmt"
     "log"
     
-    "github.com/primadi/lokstra-auth/01_credential/basic"
-    "github.com/primadi/lokstra-auth/02_token/jwt"
-    "github.com/primadi/lokstra-auth/03_subject/simple"
-    authz "github.com/primadi/lokstra-auth/04_authz"
-    "github.com/primadi/lokstra-auth/04_authz/rbac"
+    "github.com/primadi/lokstra-auth/credential/basic"
+    "github.com/primadi/lokstra-auth/token/jwt"
+    "github.com/primadi/lokstra-auth/identity/simple"
+    authz "github.com/primadi/lokstra-auth/authz"
+    "github.com/primadi/lokstra-auth/authz/rbac"
 )
 
 func main() {
@@ -161,7 +161,7 @@ See [examples/](./examples/) directory for complete working examples:
 
 ```go
 import (
-    "github.com/primadi/lokstra-auth/01_credential/basic"
+    "github.com/primadi/lokstra-auth/credential/basic"
 )
 
 // Create authenticator
@@ -194,7 +194,7 @@ if result.Success {
 
 ```go
 import (
-    "github.com/primadi/lokstra-auth/01_credential/oauth2"
+    "github.com/primadi/lokstra-auth/credential/oauth2"
 )
 
 // Create OAuth2 authenticator
@@ -218,7 +218,7 @@ if result.Success {
 
 ```go
 import (
-    "github.com/primadi/lokstra-auth/01_credential/passwordless"
+    "github.com/primadi/lokstra-auth/credential/passwordless"
 )
 
 // Create passwordless authenticator
@@ -246,7 +246,7 @@ result, err := auth.Authenticate(ctx, creds)
 
 ```go
 import (
-    "github.com/primadi/lokstra-auth/01_credential/apikey"
+    "github.com/primadi/lokstra-auth/credential/apikey"
 )
 
 // Create API key authenticator
@@ -281,25 +281,25 @@ if result.Success {
 
 ```
 lokstra-auth/
-├── 01_credential/      # ✅ Layer 1: Credential Input (COMPLETE)
+├── credential/      # ✅ Layer 1: Credential Input (COMPLETE)
 │   ├── contract.go     # Core interfaces
 │   ├── basic/          # Username/password
 │   ├── oauth2/         # OAuth2 (Google, GitHub, Facebook)
 │   ├── passwordless/   # Magic Link & OTP
 │   ├── apikey/         # API key authentication
 │   └── README.md       # ✅ Complete documentation
-├── 02_token/           # ✅ Layer 2: Token Verification (COMPLETE)
+├── token/           # ✅ Layer 2: Token Verification (COMPLETE)
 │   ├── contract.go     # Core interfaces
 │   ├── jwt/            # JWT with access+refresh tokens
 │   ├── simple/         # Simple token manager
 │   └── README.md       # ✅ Complete documentation
-├── 03_subject/         # ✅ Layer 3: Subject Resolution (COMPLETE)
+├── rbac/         # ✅ Layer 3: Subject Resolution (COMPLETE)
 │   ├── contract.go     # Interface definitions
 │   ├── simple/         # Simple resolver
 │   ├── enriched/       # Enriched resolver with external data
 │   ├── cached/         # Cached resolver for performance
 │   └── README.md       # ✅ Complete documentation
-├── 04_authz/           # ✅ Layer 4: Authorization (COMPLETE)
+├── authz/           # ✅ Layer 4: Authorization (COMPLETE)
 │   ├── contract.go     # Interface definitions
 │   ├── rbac/           # Role-based access control
 │   ├── abac/           # Attribute-based access control
@@ -311,15 +311,15 @@ lokstra-auth/
 │   ├── permission.go   # Permission check middleware
 │   └── role.go         # Role check middleware
 ├── examples/           # ✅ Working Examples
-│   ├── 01_credential/  # Credential layer examples
+│   ├── credential/  # Credential layer examples
 │   │   ├── 01_basic/       # Basic auth flow
 │   │   ├── 02_multi_auth/  # Multi-authenticator
 │   │   ├── 03_oauth2/      # ✅ OAuth2 example
 │   │   ├── 04_passwordless/# ✅ Passwordless example
 │   │   └── 05_apikey/      # ✅ API Key example
-│   ├── 02_token/       # ✅ Token layer examples
-│   ├── 03_subject/     # ✅ Subject layer examples
-│   ├── 04_authz/       # ✅ Authorization layer examples
+│   ├── token/       # ✅ Token layer examples
+│   ├── rbac/     # ✅ Subject layer examples
+│   ├── authz/       # ✅ Authorization layer examples
 │   │   ├── 01_rbac/        # RBAC examples
 │   │   ├── 02_abac/        # ABAC examples
 │   │   └── 03_acl/         # ACL examples
@@ -332,26 +332,26 @@ lokstra-auth/
 ## 📚 Documentation
 
 ### Layer Documentation
-- ✅ [Layer 1: Credential](./01_credential/README.md) - **Complete** - Basic, OAuth2, Passwordless, API Key
-- ✅ [Layer 2: Token](./02_token/README.md) - **Complete** - JWT (Access+Refresh), Simple, Store
-- ✅ [Layer 3: Subject](./03_subject/README.md) - **Complete** - Simple, Enriched, Cached resolvers
-- ✅ [Layer 4: Authorization](./04_authz/README.md) - **Complete** - RBAC, ABAC, ACL, Policy-based
+- ✅ [Layer 1: Credential](./credential/README.md) - **Complete** - Basic, OAuth2, Passwordless, API Key
+- ✅ [Layer 2: Token](./token/README.md) - **Complete** - JWT (Access+Refresh), Simple, Store
+- ✅ [Layer 3: Subject](./rbac/README.md) - **Complete** - Simple, Enriched, Cached resolvers
+- ✅ [Layer 4: Authorization](./authz/README.md) - **Complete** - RBAC, ABAC, ACL, Policy-based
 
 ### Examples
-- ✅ [Basic Authentication](./examples/01_credential/01_basic/) - Username/password flow
-- ✅ [Multi-Authenticator](./examples/01_credential/02_multi_auth/) - Multiple auth methods
-- ✅ [OAuth2 Auth](./examples/01_credential/03_oauth2/) - Provider integration guide
-- ✅ [Passwordless Auth](./examples/01_credential/04_passwordless/) - Magic Link & OTP
-- ✅ [API Key Auth](./examples/01_credential/05_apikey/) - Full API key lifecycle
-- ✅ [JWT Token Management](./examples/02_token/) - Access & refresh tokens
-- ✅ [Subject Resolution](./examples/03_subject/) - Identity enrichment & caching
-- ✅ [Authorization Examples](./examples/04_authz/) - RBAC, ABAC, ACL examples
+- ✅ [Basic Authentication](./examples/credential/01_basic/) - Username/password flow
+- ✅ [Multi-Authenticator](./examples/credential/02_multi_auth/) - Multiple auth methods
+- ✅ [OAuth2 Auth](./examples/credential/03_oauth2/) - Provider integration guide
+- ✅ [Passwordless Auth](./examples/credential/04_passwordless/) - Magic Link & OTP
+- ✅ [API Key Auth](./examples/credential/05_apikey/) - Full API key lifecycle
+- ✅ [JWT Token Management](./examples/token/) - Access & refresh tokens
+- ✅ [Subject Resolution](./examples/rbac/) - Identity enrichment & caching
+- ✅ [Authorization Examples](./examples/authz/) - RBAC, ABAC, ACL examples
 - ✅ [Complete Flow](./examples/complete/01_basic_flow/) - All 4 layers integrated
 - ✅ [Multi-Credential Demo](./examples/complete/02_multi_auth/) - Multiple auth methods with RBAC
 
 ## ✨ Features
 
-### Credential Layer (01_credential/)
+### Credential Layer (credential/)
 - ✅ **5 Authenticator Types**: Basic, OAuth2, Passwordless, API Key, Passkey
 - ✅ **Provider Support**: Google, GitHub, Facebook OAuth2
 - ✅ **Passwordless Methods**: Magic Link (15min TTL), OTP (5min TTL)
@@ -361,7 +361,7 @@ lokstra-auth/
 - ✅ **Extensible**: Custom authenticators via interface
 - ✅ **In-Memory Stores**: Testing-ready implementations
 
-### Token Layer (02_token/)
+### Token Layer (token/)
 - ✅ JWT generation with access + refresh tokens
 - ✅ Automatic token rotation
 - ✅ Token verification and validation
@@ -370,7 +370,7 @@ lokstra-auth/
 - ✅ Configurable token expiry
 - ✅ Custom claims support
 
-### Subject Layer (03_subject/)
+### Subject Layer (rbac/)
 - ✅ Simple subject resolver (direct mapping)
 - ✅ Enriched resolver (external data integration)
 - ✅ Cached resolver (performance optimization)
@@ -380,7 +380,7 @@ lokstra-auth/
 - ✅ Claims enrichment with roles, permissions, profile
 - ✅ Multi-source data aggregation
 
-### Authorization Layer (04_authz/)
+### Authorization Layer (authz/)
 - ✅ Role-Based Access Control (RBAC) with wildcards
 - ✅ Attribute-Based Access Control (ABAC) with conditional rules
 - ✅ Access Control Lists (ACL) for fine-grained permissions
@@ -446,8 +446,8 @@ tokenStore := passwordless.NewInMemoryTokenStore()
 keyStore := apikey.NewInMemoryKeyStore()
 
 // Run examples
-go run examples/01_credential/05_apikey/main.go
-go run examples/01_credential/04_passwordless/main.go
+go run examples/credential/05_apikey/main.go
+go run examples/credential/04_passwordless/main.go
 go run examples/complete/02_multi_auth/main.go
 ```
 

@@ -1,0 +1,289 @@
+### Middleware Testing
+### Tests for all authentication and authorization middleware
+@baseUrl = http://localhost:9090/api
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+@branchId = hq-jakarta
+
+# Prerequisites:
+# 1. Tenant, app, and users must exist
+# 2. Get valid access_token from login
+# 3. Replace tokens in tests below with actual values
+
+# =============================================================================
+# AUTH MIDDLEWARE TESTS
+# =============================================================================
+
+### 1. Protected Route - No Token (Should Fail 401)
+GET {{baseUrl}}/profile
+Content-Type: {{contentType}}
+
+### 2. Protected Route - Invalid Token (Should Fail 401)
+GET {{baseUrl}}/profile
+Content-Type: {{contentType}}
+Authorization: Bearer invalid_token_here
+
+### 3. Protected Route - Expired Token (Should Fail 401)
+GET {{baseUrl}}/profile
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.expired
+
+### 4. Protected Route - Valid Token (Should Succeed)
+GET {{baseUrl}}/profile
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token_here
+
+# =============================================================================
+# TENANT MIDDLEWARE TESTS
+# =============================================================================
+
+### 5. Tenant Mismatch - Header vs Token (Should Fail 403)
+# Token has tenant_id=acme-corp, but header says different-tenant
+GET {{baseUrl}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token_here
+X-Tenant-ID: different-tenant
+X-App-ID: {{appId}}
+
+### 6. Tenant Match - Header = Token (Should Succeed)
+GET {{baseUrl}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token_here
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 7. No Tenant Header - Use Token Tenant (Should Succeed)
+GET {{baseUrl}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token_here
+X-App-ID: {{appId}}
+
+# =============================================================================
+# ROLE MIDDLEWARE TESTS
+# =============================================================================
+
+### 8. Admin-Only Route - Non-Admin User (Should Fail 403)
+GET {{baseUrl}}/admin/users
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.regular_user_token
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 9. Admin-Only Route - Admin User (Should Succeed)
+GET {{baseUrl}}/admin/users
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.admin_user_token
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 10. Any Role - User Has One of Required Roles (Should Succeed)
+# Requires: admin OR manager OR supervisor
+GET {{baseUrl}}/dashboard
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.manager_user_token
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 11. All Roles - User Missing One Role (Should Fail 403)
+# Requires: admin AND auditor
+POST {{baseUrl}}/sensitive-operation
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.admin_only_token
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# PERMISSION MIDDLEWARE TESTS
+# =============================================================================
+
+### 12. Permission Check - User Has Permission (Should Succeed)
+GET {{baseUrl}}/documents
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.token_with_read_documents
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 13. Permission Check - User Missing Permission (Should Fail 403)
+DELETE {{baseUrl}}/documents/doc_123
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.token_without_delete_permission
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 14. Any Permission - User Has One of Required (Should Succeed)
+# Requires: create:documents OR admin:all
+POST {{baseUrl}}/documents
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.token_with_create_documents
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "title": "New Document",
+  "content": "Test content"
+}
+
+# =============================================================================
+# RATE LIMIT MIDDLEWARE TESTS
+# =============================================================================
+
+### 15. Rapid Requests - Test Rate Limiting
+# Send these requests quickly to trigger rate limit
+# Request 1
+GET {{baseUrl}}/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token
+X-Tenant-ID: {{tenantId}}
+
+### Request 2
+GET {{baseUrl}}/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token
+X-Tenant-ID: {{tenantId}}
+
+### Request 3
+GET {{baseUrl}}/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token
+X-Tenant-ID: {{tenantId}}
+
+# ... Continue until rate limit is hit (should return 429)
+
+### 16. Check Rate Limit Headers
+# Response should include:
+# X-RateLimit-Limit: 100
+# X-RateLimit-Remaining: 97
+# X-RateLimit-Reset: 1234567890
+GET {{baseUrl}}/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token
+X-Tenant-ID: {{tenantId}}
+
+# =============================================================================
+# AUDIT MIDDLEWARE TESTS
+# =============================================================================
+
+### 17. Audited Operation - Success
+# This operation should be logged in audit trail
+POST {{baseUrl}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.admin_token
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "username": "audit.test",
+  "email": "audit@test.com"
+}
+
+### 18. Audited Operation - Failure
+# Failed operation should also be logged
+DELETE {{baseUrl}}/users/nonexistent
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.admin_token
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# RESOURCE OWNERSHIP MIDDLEWARE TESTS
+# =============================================================================
+
+### 19. Access Own Resource (Should Succeed)
+# User accessing their own order
+GET {{baseUrl}}/orders/ord_123
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.user_owns_ord_123
+X-Tenant-ID: {{tenantId}}
+
+### 20. Access Others' Resource (Should Fail 403)
+# User trying to access someone else's order
+GET {{baseUrl}}/orders/ord_456
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.user_owns_ord_123
+X-Tenant-ID: {{tenantId}}
+
+### 21. Admin Access Any Resource (Should Succeed)
+# Admin can bypass ownership check
+GET {{baseUrl}}/orders/ord_456
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.admin_token
+X-Tenant-ID: {{tenantId}}
+
+# =============================================================================
+# MIDDLEWARE CHAIN TESTS (Full Stack)
+# =============================================================================
+
+### 22. Complete Middleware Chain - All Pass
+# Tests: Auth → Tenant → Rate Limit → Audit → Role → Permission → Ownership
+DELETE {{baseUrl}}/orders/ord_123
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_admin_token_owns_ord_123
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 23. Middleware Chain - Fail at Auth
+# Should fail at AuthMiddleware (no token)
+DELETE {{baseUrl}}/orders/ord_123
+Content-Type: {{contentType}}
+X-Tenant-ID: {{tenantId}}
+
+### 24. Middleware Chain - Fail at Tenant
+# Should fail at TenantMiddleware (mismatch)
+DELETE {{baseUrl}}/orders/ord_123
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token
+X-Tenant-ID: different-tenant
+
+### 25. Middleware Chain - Fail at Permission
+# Should fail at PermissionMiddleware (no delete:orders permission)
+DELETE {{baseUrl}}/orders/ord_123
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.token_without_delete_permission
+X-Tenant-ID: {{tenantId}}
+
+### 26. Middleware Chain - Fail at Ownership
+# Should fail at ResourceOwnershipMiddleware (not owner)
+DELETE {{baseUrl}}/orders/ord_456
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.token_with_delete_permission_owns_ord_123
+X-Tenant-ID: {{tenantId}}
+
+# =============================================================================
+# OPTIONAL AUTH TESTS (Public + Private Routes)
+# =============================================================================
+
+### 27. Optional Auth - Anonymous Access (Should Succeed with Limited Data)
+GET {{baseUrl}}/products
+Content-Type: {{contentType}}
+
+### 28. Optional Auth - Authenticated Access (Should Succeed with Full Data)
+GET {{baseUrl}}/products
+Content-Type: {{contentType}}
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.valid_token
+X-Tenant-ID: {{tenantId}}
+
+# =============================================================================
+# NOTES
+# =============================================================================
+# 
+# Expected Middleware Order:
+# 1. Recovery (catch panics)
+# 2. Logging (log all requests)
+# 3. CORS (handle preflight)
+# 4. Audit (log before auth - captures failed auth)
+# 5. Auth (verify token, build identity)
+# 6. Tenant (validate tenant context)
+# 7. Rate Limit (limit per user/tenant)
+# 8. Role (check roles)
+# 9. Permission (check permissions)
+# 10. Resource Ownership (check ownership)
+# 11. Handler (business logic)
+#
+# HTTP Status Codes:
+# - 401 Unauthorized: Missing or invalid token (AuthMiddleware)
+# - 403 Forbidden: Valid token but insufficient privileges (Role/Permission/Ownership/Tenant)
+# - 429 Too Many Requests: Rate limit exceeded (RateLimitMiddleware)
+# - 500 Internal Server Error: System error
+#
+# Response Headers:
+# - X-RateLimit-Limit: Maximum requests allowed
+# - X-RateLimit-Remaining: Requests remaining in window
+# - X-RateLimit-Reset: Unix timestamp when window resets
+# - Retry-After: Seconds to wait before retry (on 429)

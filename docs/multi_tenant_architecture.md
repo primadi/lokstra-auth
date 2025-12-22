@@ -46,7 +46,7 @@ Tenant (tenant_id: "acme-corp")
 
 ### Layer 0: Core (NEW)
 
-Package: `00_core`
+Package: `core`
 
 #### Tenant Management
 
@@ -347,7 +347,7 @@ type Subject struct {
     Metadata    map[string]any
 }
 
-type SubjectResolver interface {
+type IdentityResolver interface {
     // Resolve dengan tenant context
     Resolve(ctx context.Context, tenantID, userID string) (*Subject, error)
     
@@ -549,7 +549,7 @@ CREATE TABLE role_assignments (
 ## Migration Strategy
 
 ### Phase 1: Add tenant_id & app_id (Breaking Change)
-1. Add `00_core` package
+1. Add `core` package
 2. Update all contracts to include tenant_id & app_id
 3. Update all examples
 
@@ -559,10 +559,10 @@ CREATE TABLE role_assignments (
 3. UserService
 
 ### Phase 3: Update Each Layer
-1. Update 01_credential
-2. Update 02_token
-3. Update 03_subject
-4. Update 04_authz
+1. Update credential
+2. Update token
+3. Update subject
+4. Update authz
 
 ### Phase 4: Examples & Documentation
 1. Complete multi-tenant examples
@@ -653,7 +653,7 @@ claims, _ := tokenManager.Verify(ctx, token)
 ## Next Steps
 
 1. ✅ Document architecture (this file)
-2. ⏳ Create `00_core` package structure
+2. ⏳ Create `core` package structure
 3. ⏳ Update credential layer contracts
 4. ⏳ Implement TenantService, AppService, UserService
 5. ⏳ Update all authenticators
