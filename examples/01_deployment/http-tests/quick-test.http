@@ -1,0 +1,18 @@
+### Quick Test - Public Endpoint
+GET http://localhost:9090/api/public
+Content-Type: application/json
+
+###
+
+### Test - Login Endpoint
+POST http://localhost:9090/api/auth/cred/basic/login
+Content-Type: application/json
+X-Tenant-ID: demo-tenant
+X-App-ID: demo-app
+
+{
+  "username": "test",
+  "password": "password123"
+}
+
+###

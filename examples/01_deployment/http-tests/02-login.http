@@ -1,0 +1,62 @@
+@baseUrl = http://localhost:9090
+@tenantId = demo-tenant
+@appId = demo-app
+
+### Login as Alice (Admin)
+# POST {{baseUrl}}/api/auth/cred/basic/login
+POST {{baseUrl}}/api/auth/cred/basic/login
+Content-Type: application/json
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "username": "alice",
+  "password": "password123"
+}
+
+### Save alice's token
+# Copy the access_token from response and use in 03-protected.http
+
+###
+
+### Login as Bob (Editor)
+# POST {{baseUrl}}/api/auth/cred/basic/login
+POST {{baseUrl}}/api/auth/cred/basic/login
+Content-Type: application/json
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "username": "bob",
+  "password": "password123"
+}
+
+###
+
+### Login as Charlie (Viewer)
+# POST {{baseUrl}}/api/auth/cred/basic/login
+POST {{baseUrl}}/api/auth/cred/basic/login
+Content-Type: application/json
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "username": "charlie",
+  "password": "password123"
+}
+
+###
+
+### Login with Wrong Password (Should Fail)
+# POST {{baseUrl}}/api/auth/cred/basic/login
+POST {{baseUrl}}/api/auth/cred/basic/login
+Content-Type: application/json
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "username": "alice",
+  "password": "wrongpassword"
+}
+
+###

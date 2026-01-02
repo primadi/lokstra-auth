@@ -1,0 +1,340 @@
+### ============================================================================
+### USER IDENTITY MANAGEMENT API TESTS
+### Manages linked identities from various authentication providers
+### ============================================================================
+
+@baseUrl = http://localhost:8080
+@apiPrefix = /api/auth
+@tenantId = acme-corp
+@appId = web-portal
+@userId = alice
+
+### Variables that will be set from responses
+# @name linkGoogle
+# @prompt identityId Identity ID from link response
+
+### ============================================================================
+### 1. LINK IDENTITIES - Connect external provider to user
+### ============================================================================
+
+### 1.1 Link Google Identity to User
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities
+Content-Type: application/json
+
+{
+  "provider": "google",
+  "provider_id": "google-oauth2|112345678901234567890",
+  "email": "alice@gmail.com",
+  "username": "alice.google",
+  "verified": true,
+  "metadata": {
+    "picture": "https://lh3.googleusercontent.com/a/default-user",
+    "locale": "en"
+  }
+}
+
+###
+
+### 1.2 Link GitHub Identity to User
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities
+Content-Type: application/json
+
+{
+  "provider": "github",
+  "provider_id": "github|12345678",
+  "email": "alice@users.noreply.github.com",
+  "username": "alice-dev",
+  "verified": true,
+  "metadata": {
+    "avatar_url": "https://avatars.githubusercontent.com/u/12345678",
+    "bio": "Software Developer"
+  }
+}
+
+###
+
+### 1.3 Link Microsoft Azure AD Identity
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities
+Content-Type: application/json
+
+{
+  "provider": "microsoft",
+  "provider_id": "00000000-0000-0000-0000-000000000001",
+  "email": "alice@company.onmicrosoft.com",
+  "username": "alice@company.com",
+  "verified": true,
+  "metadata": {
+    "tenant_id": "company-tenant-id",
+    "display_name": "Alice Johnson"
+  }
+}
+
+###
+
+### 1.4 Link Passkey/WebAuthn Identity
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities
+Content-Type: application/json
+
+{
+  "provider": "passkey",
+  "provider_id": "credential-id-base64-encoded-string",
+  "email": "alice@acme.com",
+  "verified": true,
+  "metadata": {
+    "authenticator_attachment": "platform",
+    "device_name": "Alice's iPhone 15"
+  }
+}
+
+###
+
+### ============================================================================
+### 2. GET IDENTITIES - Retrieve identity information
+### ============================================================================
+
+### 2.1 List All Identities for User
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities
+Accept: application/json
+
+###
+
+### 2.2 Get Specific Identity by ID
+# Replace {identityId} with actual ID from link response
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities/{identityId}
+Accept: application/json
+
+###
+
+### ============================================================================
+### 3. FIND USER BY PROVIDER - Useful for OAuth2 login flows
+### ============================================================================
+
+### 3.1 Find User by Google Provider ID
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/identities/find-by-provider/google/google-oauth2|112345678901234567890
+Accept: application/json
+
+###
+
+### 3.2 Find User by GitHub Provider ID
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/identities/find-by-provider/github/github|12345678
+Accept: application/json
+
+###
+
+### 3.3 Find User by Microsoft Provider ID
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/identities/find-by-provider/microsoft/00000000-0000-0000-0000-000000000001
+Accept: application/json
+
+###
+
+### ============================================================================
+### 4. UPDATE IDENTITY - Update identity information
+### ============================================================================
+
+### 4.1 Update Google Identity (e.g., after email verification)
+PUT {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities/{identityId}
+Content-Type: application/json
+
+{
+  "email": "alice.new@gmail.com",
+  "verified": true,
+  "metadata": {
+    "picture": "https://lh3.googleusercontent.com/a/new-photo",
+    "locale": "en",
+    "updated_at": "2025-12-04T10:00:00Z"
+  }
+}
+
+###
+
+### ============================================================================
+### 5. UNLINK IDENTITIES - Remove provider connections
+### ============================================================================
+
+### 5.1 Unlink GitHub Identity
+DELETE {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities/{identityId}
+
+###
+
+### 5.2 Try to Unlink Last Identity (Should Fail)
+# This should fail if user has no password and only one identity left
+DELETE {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities/{last-identity-id}
+
+###
+
+### ============================================================================
+### 6. OAUTH2 LOGIN FLOW EXAMPLE
+### ============================================================================
+
+### 6.1 OAuth2 Callback - Find or Create User
+# This is typically called after OAuth2 provider redirects back
+# Step 1: Find user by provider identity
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/identities/find-by-provider/google/google-oauth2|NEW-USER-ID
+Accept: application/json
+
+# If user not found (404), use get-or-create endpoint:
+# Step 2: Get or create user by provider
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/identities/get-or-create
+Content-Type: application/json
+
+{
+  "provider": "google",
+  "provider_id": "google-oauth2|NEW-USER-ID",
+  "email": "newuser@gmail.com",
+  "username": "newuser",
+  "verified": true,
+  "metadata": {
+    "picture": "https://lh3.googleusercontent.com/a/default",
+    "locale": "en"
+  }
+}
+
+###
+
+### ============================================================================
+### 7. MULTIPLE TENANTS - Same OAuth2 identity, different tenants
+### ============================================================================
+
+### 7.1 Link Same Google Account to User in Different Tenant
+# Same person, different organization
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/another-corp/users/user-456/identities
+Content-Type: application/json
+
+{
+  "provider": "google",
+  "provider_id": "google-oauth2|112345678901234567890",
+  "email": "alice@gmail.com",
+  "verified": true,
+  "metadata": {
+    "picture": "https://lh3.googleusercontent.com/a/default-user"
+  }
+}
+
+# This should work - same OAuth2 account can be linked to different users in different tenants
+
+###
+
+### ============================================================================
+### 8. ERROR CASES
+### ============================================================================
+
+### 8.1 Try to Link Same Provider Twice to Same User (Should Update)
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities
+Content-Type: application/json
+
+{
+  "provider": "google",
+  "provider_id": "google-oauth2|DIFFERENT-ID",
+  "email": "alice.updated@gmail.com",
+  "verified": true
+}
+
+###
+
+### 8.2 Try to Link Provider Already Linked to Another User (Should Fail)
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/bob/identities
+Content-Type: application/json
+
+{
+  "provider": "google",
+  "provider_id": "google-oauth2|112345678901234567890",
+  "email": "bob@example.com",
+  "verified": false
+}
+
+# Should return error: provider identity already linked to another user
+
+###
+
+### 8.3 Invalid Provider Type
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities
+Content-Type: application/json
+
+{
+  "provider": "invalid-provider",
+  "provider_id": "12345",
+  "email": "test@example.com"
+}
+
+###
+
+### ============================================================================
+### 9. ADMIN OPERATIONS
+### ============================================================================
+
+### 9.1 List All Identities for Audit
+# Get all linked identities for a user (admin view)
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities
+Accept: application/json
+
+###
+
+### 9.2 Force Unlink Identity (Admin)
+# Admin can unlink even if it's the last identity
+DELETE {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities/{identityId}?force=true
+
+###
+
+### ============================================================================
+### 10. MIGRATION SCENARIOS
+### ============================================================================
+
+### 10.1 Migrate User from Local Auth to OAuth2
+# Step 1: User exists with password (local auth)
+# User: alice, has password
+
+# Step 2: Link Google identity
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/{{tenantId}}/users/{{userId}}/identities
+Content-Type: application/json
+
+{
+  "provider": "google",
+  "provider_id": "google-oauth2|112345678901234567890",
+  "email": "alice@gmail.com",
+  "verified": true
+}
+
+# Step 3: Optionally remove password (migrate to OAuth2 only)
+DELETE {{baseUrl}}/api/core/tenant/{{tenantId}}/user/{{userId}}/password
+
+# Now user can only login via Google
+
+###
+
+### ============================================================================
+### NOTES
+### ============================================================================
+# 
+# Identity Management Rules:
+# 1. Each user can have multiple identities (Google + GitHub + Microsoft, etc.)
+# 2. Each provider identity can only be linked to ONE user per tenant
+# 3. Same OAuth2 account can be linked to different users in different tenants
+# 4. User must have at least ONE authentication method (identity OR password)
+# 5. Cannot unlink last identity if user has no password
+# 
+# Provider Types:
+# - local: Username/password (managed via user password endpoints)
+# - google: Google OAuth2
+# - github: GitHub OAuth2
+# - microsoft: Microsoft Azure AD
+# - facebook: Facebook OAuth2
+# - apple: Apple Sign In
+# - passkey: WebAuthn/FIDO2
+# - magic_link: Passwordless email
+# - otp: Passwordless OTP
+# - saml: SAML SSO
+# - oidc: Generic OpenID Connect
+# - ldap: LDAP/Active Directory
+# 
+# OAuth2 Login Flow:
+# 1. User clicks "Login with Google"
+# 2. Redirect to Google OAuth2
+# 3. Google redirects back with code
+# 4. Exchange code for access token
+# 5. Get user info from Google (sub, email, name)
+# 6. Find user by provider: GET /api/core/tenant/{id}/identity/provider/google/{sub}
+# 7a. If found: Login user, generate JWT token
+# 7b. If not found: Create user + Link identity, generate JWT token
+# 
+### ============================================================================
+

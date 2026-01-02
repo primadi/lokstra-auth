@@ -1,0 +1,101 @@
+### App Key Service API Tests
+@baseUrl = http://localhost:9090/api/auth/core//tenants/{{tenantId}}/apps/{{appId}}/keys
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+
+### 1. Generate App Key (Live Environment)
+# @name generateKey
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Production API Key",
+  "purpose": "production-api",
+  "description": "API key for production environment",
+  "environment": "live",
+  "scopes": ["read", "write"]
+}
+
+### IMPORTANT: Save the keyString from response above!
+### Response example:
+# {
+#   "key_id": "appkey_1234567890abcdef",
+#   "key_string": "main-app_appkey_1234567890abcdef.randomsecret123456",
+#   "app_key": { ... }
+# }
+### Copy the key_id value and use it in @keyId variable below
+
+@keyId = appkey_1234567890abcdef
+
+### 2. Generate App Key (Test Environment)
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Test API Key",
+  "purpose": "testing",
+  "description": "API key for testing",
+  "environment": "test",
+  "scopes": ["read"]
+}
+
+### 3. List All App Keys for App
+# Run this first to see all available key IDs
+GET {{baseUrl}}
+
+### 4. Get App Key by ID
+# Replace @keyId with actual key_id from step 1 or 2 response
+@keyId = appkey_0dabaa82466f9cc882559e8bea626c98
+GET {{baseUrl}}/{{keyId}}
+
+### 5. Revoke App Key
+POST {{baseUrl}}/{{keyId}}/revoke
+
+### 6. Rotate App Key
+POST {{baseUrl}}/{{keyId}}/rotate
+Content-Type: {{contentType}}
+
+{}
+
+### 7. Delete App Key
+DELETE {{baseUrl}}/{{keyId}}
+
+### ============================================================
+### WORKFLOW EXAMPLE
+### ============================================================
+
+### Step 1: Generate a new key
+# @name newKey
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+
+{
+  "name": "My Test Key",
+  "purpose": "testing",
+  "description": "Test key for workflow",
+  "environment": "test",
+  "scopes": ["read"]
+}
+
+### Step 2: List all keys to verify creation
+GET {{baseUrl}}
+
+### Step 3: Get specific key (use key_id from Step 1 response)
+# GET {{baseUrl}}/{key_id_from_step1}
+
+### Step 4: Revoke the key
+# POST {{baseUrl}}/{key_id_from_step1}/revoke
+
+### Step 5: Delete the key
+# DELETE {{baseUrl}}/{key_id_from_step1}
+
+### ============================================================
+### NOTES
+### ============================================================
+# - The keyString is only shown ONCE in the GenerateKey response - save it securely!
+# - Format: {appId}_{keyId}.{secret}
+# - Example: main-app_appkey_abc123.randomsecret123
+# - Use the key_id from the response for subsequent operations
+# - The secret is hashed (SHA3-256) before storage and cannot be retrieved
+# - Always run "List All App Keys" first to see what keys exist in the database

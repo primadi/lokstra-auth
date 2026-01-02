@@ -1,0 +1,578 @@
+### RBAC (Role-Based Access Control) Service API Tests
+### Handles role-based authorization checks
+@baseUrl = http://localhost:9090/api/auth/authz
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+@branchId = hq-jakarta
+
+# Prerequisites:
+# 1. User must be authenticated and have access_token
+# 2. Roles must be assigned to users
+# 3. Permissions must be defined for roles
+
+# =============================================================================
+# VARIABLES - UPDATE WITH ACTUAL VALUES
+# =============================================================================
+
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+@userId = usr-123
+@adminRoleId = role-admin
+@editorRoleId = role-editor
+@viewerRoleId = role-viewer
+
+# =============================================================================
+# ROLE MANAGEMENT
+# =============================================================================
+
+### 1. Create Admin Role
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "{{adminRoleId}}",
+  "name": "Administrator",
+  "description": "Full system access",
+  "permissions": [
+    "document:*",
+    "user:*",
+    "role:*",
+    "app:*"
+  ],
+  "metadata": {
+    "level": "system",
+    "priority": 100
+  }
+}
+
+### 2. Create Editor Role
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "{{editorRoleId}}",
+  "name": "Editor",
+  "description": "Can read and write documents",
+  "permissions": [
+    "document:read",
+    "document:write",
+    "document:update"
+  ],
+  "metadata": {
+    "level": "content",
+    "priority": 50
+  }
+}
+
+### 3. Create Viewer Role
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "{{viewerRoleId}}",
+  "name": "Viewer",
+  "description": "Read-only access",
+  "permissions": [
+    "document:read"
+  ],
+  "metadata": {
+    "level": "content",
+    "priority": 10
+  }
+}
+
+### 4. Get Role by ID
+GET {{baseUrl}}/roles/{{adminRoleId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 5. List All Roles
+GET {{baseUrl}}/roles
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 6. Update Role
+PUT {{baseUrl}}/roles/{{editorRoleId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "name": "Content Editor",
+  "description": "Can create, read, update content",
+  "permissions": [
+    "document:read",
+    "document:write",
+    "document:update",
+    "document:create"
+  ]
+}
+
+### 7. Delete Role
+DELETE {{baseUrl}}/roles/{{viewerRoleId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# ROLE ASSIGNMENT
+# =============================================================================
+
+### 8. Assign Role to User
+POST {{baseUrl}}/roles/{{adminRoleId}}/users
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "user_id": "{{userId}}",
+  "granted_by": "system-admin",
+  "expires_at": null
+}
+
+### 9. Assign Multiple Roles to User
+POST {{baseUrl}}/users/{{userId}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "role_ids": [
+    "{{editorRoleId}}",
+    "{{viewerRoleId}}"
+  ]
+}
+
+### 10. Get User's Roles
+GET {{baseUrl}}/users/{{userId}}/roles
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 11. Revoke Role from User
+DELETE {{baseUrl}}/roles/{{editorRoleId}}/users/{{userId}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 12. Get Users with Role
+GET {{baseUrl}}/roles/{{adminRoleId}}/users
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# AUTHORIZATION CHECKS
+# =============================================================================
+
+### 13. Check Permission - Admin Delete Document
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "{{userId}}",
+    "roles": ["admin"]
+  },
+  "action": "document:delete",
+  "resource": {
+    "type": "document",
+    "id": "doc-123",
+    "attributes": {
+      "owner": "usr-456",
+      "status": "published"
+    }
+  }
+}
+
+### 14. Check Permission - Editor Write Document
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-002",
+    "roles": ["editor"]
+  },
+  "action": "document:write",
+  "resource": {
+    "type": "document",
+    "id": "doc-456"
+  }
+}
+
+### 15. Check Permission - Viewer Delete Document (Should Deny)
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-003",
+    "roles": ["viewer"]
+  },
+  "action": "document:delete",
+  "resource": {
+    "type": "document",
+    "id": "doc-789"
+  }
+}
+
+### 16. Check Permission - Multiple Roles
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-004",
+    "roles": ["editor", "viewer"]
+  },
+  "action": "document:update",
+  "resource": {
+    "type": "document",
+    "id": "doc-999"
+  }
+}
+
+### 17. Check Permission - Wildcard Permission
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "{{userId}}",
+    "roles": ["admin"]
+  },
+  "action": "document:archive",
+  "resource": {
+    "type": "document",
+    "id": "doc-old"
+  },
+  "context": {
+    "ip_address": "192.168.1.100",
+    "timestamp": "2025-11-26T10:00:00Z"
+  }
+}
+
+### 18. Batch Check Permissions
+POST {{baseUrl}}/check/batch
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-002",
+    "roles": ["editor"]
+  },
+  "checks": [
+    {
+      "action": "document:read",
+      "resource": {"type": "document", "id": "doc-1"}
+    },
+    {
+      "action": "document:write",
+      "resource": {"type": "document", "id": "doc-1"}
+    },
+    {
+      "action": "document:delete",
+      "resource": {"type": "document", "id": "doc-1"}
+    }
+  ]
+}
+
+# =============================================================================
+# PERMISSION MANAGEMENT
+# =============================================================================
+
+### 19. List All Permissions for Role
+GET {{baseUrl}}/roles/{{editorRoleId}}/permissions
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 20. Add Permission to Role
+POST {{baseUrl}}/roles/{{editorRoleId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "permissions": [
+    "document:publish",
+    "document:unpublish"
+  ]
+}
+
+### 21. Remove Permission from Role
+DELETE {{baseUrl}}/roles/{{editorRoleId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "permissions": [
+    "document:unpublish"
+  ]
+}
+
+### 22. Get User's Effective Permissions
+# Returns all permissions from all assigned roles
+GET {{baseUrl}}/users/{{userId}}/permissions
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+### 23. Check if User Has Specific Permission
+GET {{baseUrl}}/users/{{userId}}/permissions/document:write
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# ROLE HIERARCHY (If Supported)
+# =============================================================================
+
+### 24. Create Role with Parent
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "role-senior-editor",
+  "name": "Senior Editor",
+  "description": "Editor with additional privileges",
+  "parent_role_id": "{{editorRoleId}}",
+  "permissions": [
+    "document:publish",
+    "document:archive"
+  ]
+}
+
+### 25. Get Role Hierarchy
+GET {{baseUrl}}/roles/{{editorRoleId}}/hierarchy
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+# =============================================================================
+# WORKFLOW EXAMPLES
+# =============================================================================
+
+### WORKFLOW 1: Complete RBAC Setup
+# Step 1: Create roles
+# (Already done in tests 1-3)
+
+# Step 2: Assign admin role to user
+POST {{baseUrl}}/users/{{userId}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "role_ids": ["{{adminRoleId}}"]
+}
+
+###
+
+# Step 3: Check what user can do
+GET {{baseUrl}}/users/{{userId}}/permissions
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+###
+
+# Step 4: Verify specific action is allowed
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "{{userId}}",
+    "roles": ["admin"]
+  },
+  "action": "user:delete",
+  "resource": {
+    "type": "user",
+    "id": "usr-999"
+  }
+}
+
+### WORKFLOW 2: Dynamic Permission Update
+# Step 1: Check current permissions
+GET {{baseUrl}}/roles/{{editorRoleId}}/permissions
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+###
+
+# Step 2: Add new permission
+POST {{baseUrl}}/roles/{{editorRoleId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "permissions": ["document:export"]
+}
+
+###
+
+# Step 3: Verify permission takes effect immediately
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-editor",
+    "roles": ["editor"]
+  },
+  "action": "document:export",
+  "resource": {
+    "type": "document",
+    "id": "doc-report"
+  }
+}
+
+# =============================================================================
+# EDGE CASES & ERROR HANDLING
+# =============================================================================
+
+### Edge Case 1: Empty Roles Array
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-no-roles",
+    "roles": []
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "document",
+    "id": "doc-123"
+  }
+}
+
+### Edge Case 2: Non-existent Role
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-005",
+    "roles": ["non-existent-role"]
+  },
+  "action": "document:read",
+  "resource": {
+    "type": "document",
+    "id": "doc-123"
+  }
+}
+
+### Edge Case 3: Case Sensitivity in Actions
+POST {{baseUrl}}/check
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "subject": {
+    "type": "user",
+    "id": "usr-002",
+    "roles": ["editor"]
+  },
+  "action": "DOCUMENT:READ",
+  "resource": {
+    "type": "document",
+    "id": "doc-123"
+  }
+}
+
+### Edge Case 4: Duplicate Role Assignment
+POST {{baseUrl}}/users/{{userId}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "role_ids": [
+    "{{adminRoleId}}",
+    "{{adminRoleId}}"
+  ]
+}
+
+### Edge Case 5: Circular Role Hierarchy (Should Fail)
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+X-Tenant-ID: {{tenantId}}
+X-App-ID: {{appId}}
+
+{
+  "id": "role-circular",
+  "name": "Circular Role",
+  "parent_role_id": "role-circular",
+  "permissions": []
+}

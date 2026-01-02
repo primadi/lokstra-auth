@@ -1,0 +1,504 @@
+### Authz API - Policy Management (Database CRUD)
+### Policy-Based Authorization - Create, Read, Update, Delete Policies
+
+@baseUrl = http://localhost:9090/api/auth/authz
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Prerequisites:
+# 1. Tenant and App must exist
+# 2. Have valid access_token
+# 3. Database migration 005_authz_policies.sql executed
+
+# =============================================================================
+# VARIABLES - UPDATE WITH ACTUAL VALUES
+# =============================================================================
+
+@policyId = policy_admin_access
+@userId = usr-123
+@roleId = role_admin
+
+# =============================================================================
+# POLICY CRUD OPERATIONS
+# =============================================================================
+
+### 1. Create Allow Policy - Admin Full Access
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "admin_full_access",
+  "description": "Admins have full access to all resources",
+  "effect": "allow",
+  "subjects": ["role:admin", "user:admin_001"],
+  "resources": ["*"],
+  "actions": ["*"],
+  "metadata": {
+    "priority": "high",
+    "category": "admin"
+  }
+}
+
+### 2. Create Allow Policy - User Read Documents
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "users_read_documents",
+  "description": "All authenticated users can read documents",
+  "effect": "allow",
+  "subjects": ["*"],
+  "resources": ["document:*", "api:/documents/*"],
+  "actions": ["read", "list"]
+}
+
+### 3. Create Deny Policy - Guest Access Restriction
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "deny_guest_write",
+  "description": "Guests cannot write or delete",
+  "effect": "deny",
+  "subjects": ["role:guest"],
+  "resources": ["*"],
+  "actions": ["write", "create", "update", "delete"]
+}
+
+### 4. Create Policy with ABAC Conditions
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "document_owner_delete",
+  "description": "Users can delete their own documents",
+  "effect": "allow",
+  "subjects": ["*"],
+  "resources": ["document:*"],
+  "actions": ["delete"],
+  "conditions": {
+    "owner_match": true,
+    "time_constraint": {
+      "after": "09:00",
+      "before": "17:00"
+    }
+  }
+}
+
+### 5. Create Policy - Editor Write Access
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "editor_write_access",
+  "description": "Editors can create and update documents",
+  "effect": "allow",
+  "subjects": ["role:editor"],
+  "resources": ["document:*", "api:/documents/*"],
+  "actions": ["read", "write", "create", "update"]
+}
+
+### 6. Get Policy by ID
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/{{policyId}}
+Authorization: Bearer {{accessToken}}
+
+### 7. Update Policy
+PUT {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/{{policyId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "policy_id": "{{policyId}}",
+  "description": "Updated policy description",
+  "status": "active"
+}
+
+### 8. Update Policy - Add More Actions
+PUT {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/{{policyId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "policy_id": "{{policyId}}",
+  "actions": ["read", "write", "create", "update", "delete", "share"]
+}
+
+### 9. Delete Policy
+DELETE {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/{{policyId}}
+Authorization: Bearer {{accessToken}}
+
+### 10. List All Policies
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies?limit=50&offset=0
+Authorization: Bearer {{accessToken}}
+
+### 11. List Allow Policies Only
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies?effect=allow&limit=100
+Authorization: Bearer {{accessToken}}
+
+### 12. List Deny Policies Only
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies?effect=deny&limit=100
+Authorization: Bearer {{accessToken}}
+
+### 13. List Active Policies
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies?status=active&limit=100
+Authorization: Bearer {{accessToken}}
+
+### 14. List Inactive Policies
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies?status=inactive&limit=100
+Authorization: Bearer {{accessToken}}
+
+# =============================================================================
+# POLICY QUERIES - Find by Subject/Resource
+# =============================================================================
+
+### 15. Find Policies by Subject (User)
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/by-subject/{{userId}}
+Authorization: Bearer {{accessToken}}
+
+### 16. Find Policies by Subject (Role)
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/by-subject/{{roleId}}
+Authorization: Bearer {{accessToken}}
+
+### 17. Find Policies by Resource Type (Documents)
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/by-resource/document
+Authorization: Bearer {{accessToken}}
+
+### 18. Find Policies by Resource Type and ID
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/by-resource/document?resource_id=doc_123
+Authorization: Bearer {{accessToken}}
+
+# =============================================================================
+# COMPLETE POLICY SETUP EXAMPLES
+# =============================================================================
+
+### Example 1: Multi-Tier Access Control
+# Admin -> Full Access
+# Editor -> Read + Write
+# Viewer -> Read Only
+# Guest -> Deny Write
+
+### 1a. Admin Full Access Policy
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "tier1_admin_all",
+  "description": "Tier 1: Admins have full access",
+  "effect": "allow",
+  "subjects": ["role:admin"],
+  "resources": ["*"],
+  "actions": ["*"]
+}
+
+### 1b. Editor Read+Write Policy
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "tier2_editor_readwrite",
+  "description": "Tier 2: Editors can read and write",
+  "effect": "allow",
+  "subjects": ["role:editor"],
+  "resources": ["document:*", "api:/documents/*"],
+  "actions": ["read", "write", "create", "update"]
+}
+
+### 1c. Viewer Read-Only Policy
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "tier3_viewer_readonly",
+  "description": "Tier 3: Viewers can only read",
+  "effect": "allow",
+  "subjects": ["role:viewer"],
+  "resources": ["document:*", "api:/documents/*"],
+  "actions": ["read", "list"]
+}
+
+### 1d. Guest Deny Write Policy
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "tier4_guest_deny_write",
+  "description": "Tier 4: Guests cannot write",
+  "effect": "deny",
+  "subjects": ["role:guest"],
+  "resources": ["*"],
+  "actions": ["write", "create", "update", "delete"]
+}
+
+### Example 2: Resource-Based Policies
+
+### 2a. Document Owners Can Delete
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "document_owner_delete",
+  "description": "Document owners can delete their documents",
+  "effect": "allow",
+  "subjects": ["*"],
+  "resources": ["document:*"],
+  "actions": ["delete"],
+  "conditions": {
+    "resource_owner": "self",
+    "max_document_age_days": 365
+  }
+}
+
+### 2b. Shared Documents Read Access
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "shared_documents_read",
+  "description": "Users can read documents shared with them",
+  "effect": "allow",
+  "subjects": ["*"],
+  "resources": ["document:shared:*"],
+  "actions": ["read", "download"],
+  "conditions": {
+    "shared_with": "self"
+  }
+}
+
+### Example 3: API Endpoint Policies
+
+### 3a. Admin API Full Access
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "api_admin_full",
+  "description": "Admins can access all API endpoints",
+  "effect": "allow",
+  "subjects": ["role:admin"],
+  "resources": ["api:/*"],
+  "actions": ["GET", "POST", "PUT", "DELETE", "PATCH"]
+}
+
+### 3b. User API Limited Access
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "api_user_limited",
+  "description": "Users can access specific API endpoints",
+  "effect": "allow",
+  "subjects": ["role:user"],
+  "resources": ["api:/users/*", "api:/documents/*", "api:/profile/*"],
+  "actions": ["GET", "POST", "PUT"]
+}
+
+### 3c. Deny Sensitive Endpoints
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "api_deny_admin_endpoints",
+  "description": "Non-admins cannot access admin endpoints",
+  "effect": "deny",
+  "subjects": ["role:user", "role:guest"],
+  "resources": ["api:/admin/*", "api:/system/*"],
+  "actions": ["*"]
+}
+
+### Example 4: Time-Based Policies
+
+### 4a. Business Hours Access
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "business_hours_access",
+  "description": "Contractors can only access during business hours",
+  "effect": "allow",
+  "subjects": ["role:contractor"],
+  "resources": ["*"],
+  "actions": ["*"],
+  "conditions": {
+    "time_of_day": {
+      "start": "09:00",
+      "end": "17:00"
+    },
+    "days_of_week": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+  }
+}
+
+### 4b. After-Hours Restriction
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "after_hours_deny_write",
+  "description": "Prevent modifications after hours",
+  "effect": "deny",
+  "subjects": ["role:user"],
+  "resources": ["document:sensitive:*"],
+  "actions": ["write", "update", "delete"],
+  "conditions": {
+    "time_of_day": {
+      "outside_range": {
+        "start": "09:00",
+        "end": "17:00"
+      }
+    }
+  }
+}
+
+# =============================================================================
+# EDGE CASES & ERROR HANDLING
+# =============================================================================
+
+### Edge Case 1: Create policy with duplicate name (Should fail)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "admin_full_access",
+  "description": "Duplicate policy name"
+}
+
+### Edge Case 2: Get non-existent policy (Should return 404)
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/policy_does_not_exist
+Authorization: Bearer {{accessToken}}
+
+### Edge Case 3: Invalid effect value (Should fail validation)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "invalid_effect",
+  "effect": "maybe",
+  "subjects": ["*"],
+  "resources": ["*"],
+  "actions": ["read"]
+}
+
+### Edge Case 4: Empty subjects array (Should fail validation)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "no_subjects",
+  "effect": "allow",
+  "subjects": [],
+  "resources": ["document:*"],
+  "actions": ["read"]
+}
+
+### Edge Case 5: Disable policy (Set to inactive)
+PUT {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/{{policyId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "policy_id": "{{policyId}}",
+  "status": "inactive"
+}
+
+# =============================================================================
+# WORKFLOW: Complete Policy Setup
+# =============================================================================
+
+### WORKFLOW: Set up complete policy-based authorization
+
+### Step 1: Create base policies for all roles
+# (Already done in examples above)
+
+### Step 2: Verify all policies
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Step 3: Find policies affecting specific user
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/by-subject/usr-123
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Step 4: Find policies for specific resource
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/by-resource/document
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Step 5: Update policy dynamically
+PUT {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/policies/policy_editor_write_access
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "policy_id": "policy_editor_write_access",
+  "actions": ["read", "write", "create", "update", "publish"]
+}

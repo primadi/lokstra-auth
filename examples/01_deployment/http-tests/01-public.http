@@ -1,0 +1,6 @@
+### Test: Public Endpoint (No Auth Required)
+# This endpoint should work without any authentication
+GET http://localhost:9090/api/demo/public
+Content-Type: application/json
+
+###

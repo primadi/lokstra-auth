@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://primadi.github.io/lokstra/schema/lokstra.schema.json
+
+# using https://ethereal.email/messages
+
+service-definitions:
+  email_smtp:
+    type: email_smtp
+    config:
+      host: ${EMAIL_HOST:smtp.ethereal.email}               # SMTP server host
+      port: ${EMAIL_PORT:587}                               # SMTP server port
+      username: ${EMAIL_USERNAME:madisen.hahn@ethereal.email}   # SMTP username
+      password: ${EMAIL_PASSWORD:pX39w1Eyq3GYB2rvKv}        # SMTP password
+      from_email: ${EMAIL_FROM_ADDRESS:no-reply@example.com}   # Default from email
+      from_name: ${EMAIL_FROM_NAME:no-reply}                # Default from name
+      use_tls: ${EMAIL_USE_TLS:false}                       # Use TLS encryption
+      skip_verify: ${EMAIL_SKIP_VERIFY:false}               # Skip TLS certificate verification
+      use_starttls: ${EMAIL_USE_STARTTLS:false}             # Use STARTTLS
+      auth_method: ${EMAIL_AUTH_METHOD:plain}               # Auth method: "plain", "login", "crammd5"
+      pool_size: ${EMAIL_POOL_SIZE:5}                       # Connection pool size
+      max_batch_size: ${EMAIL_MAX_BATCH_SIZE:50}            # Maximum batch size

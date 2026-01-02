@@ -7,7 +7,7 @@ Lokstra Auth is an authentication and authorization framework built on top of [L
 ## 4-Layer Architecture
 
 ### Layer 1: Credential Input / Login Flow
-**Folder**: `/01_credential`
+**Folder**: `/credential`
 
 This layer is responsible for:
 - Receiving and validating credentials from various sources (login forms, APIs, OAuth, etc.)
@@ -28,7 +28,7 @@ This layer is responsible for:
 - `mtls/` - Mutual TLS (optional)
 
 ### Layer 2: Token Verification / Claim Extraction
-**Folder**: `/02_token`
+**Folder**: `/token`
 
 This layer is responsible for:
 - Token verification (JWT, OAuth tokens, custom tokens)
@@ -46,10 +46,10 @@ This layer is responsible for:
 - `refresh/` - Refresh token mechanisms
 
 ### Layer 3: Subject Resolution / Identity Context
-**Folder**: `/03_subject`
+**Folder**: `/subject`
 
 This layer is responsible for:
-- Resolving subject/user based on claims
+- Resolving rbac/user based on claims
 - Building complete identity context
 - Enriching user data from various sources
 
@@ -64,7 +64,7 @@ This layer is responsible for:
 - `cached/` - With caching layer for performance
 
 ### Layer 4: Authorization / Policy Evaluation
-**Folder**: `/04_authz`
+**Folder**: `/authz`
 
 This layer is responsible for:
 - Access policy evaluation (RBAC, ABAC, etc.)
@@ -116,28 +116,28 @@ Each layer follows a consistent structure:
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Layer 1: Credential Input / Login Flow (01_credential)      │
+│  Layer 1: Credential Input / Login Flow (credential)      │
 │  - Validate credentials                                      │
 │  - Execute authentication flow                               │
 └─────────────────────────┬───────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Layer 2: Token Verification / Claim Extraction (02_token)   │
+│  Layer 2: Token Verification / Claim Extraction (token)   │
 │  - Verify token signature                                    │
 │  - Extract claims                                            │
 └─────────────────────────┬───────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Layer 3: Subject Resolution / Identity Context (03_subject) │
+│  Layer 3: Subject Resolution / Identity Context (subject) │
 │  - Resolve user/subject                                      │
 │  - Build complete identity context                           │
 └─────────────────────────┬───────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  Layer 4: Authorization / Policy Evaluation (04_authz)       │
+│  Layer 4: Authorization / Policy Evaluation (authz)       │
 │  - Check permissions                                         │
 │  - Evaluate access policies                                  │
 └─────────────────────────┬───────────────────────────────────┘
@@ -172,7 +172,7 @@ The recommended way to use Lokstra Auth is through the `Auth` runtime:
 auth := lokstraauth.NewBuilder().
     WithAuthenticator("basic", authenticator).
     WithTokenManager(tokenManager).
-    WithSubjectResolver(resolver).
+    WithIdentityResolver(resolver).
     WithIdentityContextBuilder(builder).
     WithAuthorizer(authorizer).
     Build()
@@ -191,7 +191,7 @@ See the `/examples` folder for usage examples of each layer and complete integra
 ## Documentation
 
 - **[Runtime API](./runtime.md)** - Main entry point (Recommended)
-- [Layer 1: Credential Input](./01_credential.md)
-- [Layer 2: Token Verification](./02_token.md)
-- [Layer 3: Subject Resolution](./03_subject.md)
-- [Layer 4: Authorization](./04_authz.md)
+- [Layer 1: Credential Input](./credential.md)
+- [Layer 2: Token Verification](./token.md)
+- [Layer 3: Subject Resolution](./subject.md)
+- [Layer 4: Authorization](./authz.md)

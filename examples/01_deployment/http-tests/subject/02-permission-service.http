@@ -1,0 +1,559 @@
+### Subject API - Permissions Management
+### RBAC - Permission CRUD, Role-Permission, and User-Permission Assignments
+
+@baseUrl = http://localhost:9090/api/auth/subject
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Prerequisites:
+# 1. Roles must exist (use 01-role-service.http to create)
+# 2. Users must exist (use core/04-user-service.http)
+# 3. Have valid access_token
+
+# =============================================================================
+# VARIABLES - UPDATE WITH ACTUAL VALUES
+# =============================================================================
+
+@roleId = role_admin
+@userId = usr-123
+@permissionId = perm_read_users
+
+# =============================================================================
+# PERMISSION CRUD OPERATIONS
+# =============================================================================
+
+### 1. Create Read Permission
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "read_documents",
+  "description": "Permission to read documents",
+  "resource": "documents",
+  "action": "read",
+  "metadata": {
+    "category": "document_management",
+    "scope": "tenant"
+  }
+}
+
+### 2. Create Write Permission
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "write_documents",
+  "description": "Permission to create and update documents",
+  "resource": "documents",
+  "action": "write"
+}
+
+### 3. Create Delete Permission
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "delete_documents",
+  "description": "Permission to delete documents",
+  "resource": "documents",
+  "action": "delete"
+}
+
+### 4. Create User Management Permissions
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "manage_users",
+  "description": "Permission to manage users",
+  "resource": "users",
+  "action": "manage",
+  "metadata": {
+    "category": "user_management",
+    "level": "admin"
+  }
+}
+
+### 5. Get Permission by ID
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions/{{permissionId}}
+Authorization: Bearer {{accessToken}}
+
+### 6. Update Permission
+PUT {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions/{{permissionId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "permission_id": "{{permissionId}}",
+  "description": "Updated: Permission to read and list documents",
+  "status": "active",
+  "metadata": {
+    "category": "document_management",
+    "scope": "tenant",
+    "updated_by": "admin"
+  }
+}
+
+### 7. Delete Permission
+DELETE {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions/{{permissionId}}
+Authorization: Bearer {{accessToken}}
+
+### 8. List All Permissions
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions?limit=50&offset=0
+Authorization: Bearer {{accessToken}}
+
+### 9. List Permissions by Resource
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions?resource=documents&limit=100
+Authorization: Bearer {{accessToken}}
+
+### 10. List Permissions by Action
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions?action=read&limit=100
+Authorization: Bearer {{accessToken}}
+
+### 11. List Active Permissions
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions?status=active&limit=100
+Authorization: Bearer {{accessToken}}
+
+# =============================================================================
+# ROLE-PERMISSION ASSIGNMENTS
+# =============================================================================
+
+### 12. Assign Read Permission to Admin Role
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/{{roleId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "{{roleId}}",
+  "permission_id": "perm_read_documents"
+}
+
+### 13. Assign Write Permission to Admin Role
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/{{roleId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "{{roleId}}",
+  "permission_id": "perm_write_documents"
+}
+
+### 14. Assign Delete Permission to Admin Role
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/{{roleId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "{{roleId}}",
+  "permission_id": "perm_delete_documents"
+}
+
+### 15. Revoke Permission from Role
+DELETE {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/{{roleId}}/permissions/perm_delete_documents
+Authorization: Bearer {{accessToken}}
+
+### 16. List Role's Permissions
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/{{roleId}}/permissions
+Authorization: Bearer {{accessToken}}
+
+# =============================================================================
+# USER-PERMISSION DIRECT ASSIGNMENTS
+# =============================================================================
+
+### 17. Assign Permission Directly to User
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/{{userId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "{{userId}}",
+  "permission_id": "perm_special_access"
+}
+
+### 18. Assign Another Direct Permission
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/{{userId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "{{userId}}",
+  "permission_id": "perm_read_documents"
+}
+
+### 19. Revoke Direct Permission from User
+DELETE {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/{{userId}}/permissions/perm_special_access
+Authorization: Bearer {{accessToken}}
+
+### 20. List User's Permissions (Direct + Inherited from Roles)
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/{{userId}}/permissions
+Authorization: Bearer {{accessToken}}
+
+# =============================================================================
+# COMPLETE PERMISSION SETUP WORKFLOW
+# =============================================================================
+
+### WORKFLOW: Set up complete permission hierarchy
+
+### Step 1: Create all basic permissions
+# Documents
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "documents_read",
+  "description": "Read documents",
+  "resource": "documents",
+  "action": "read"
+}
+
+###
+
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "documents_write",
+  "description": "Write documents",
+  "resource": "documents",
+  "action": "write"
+}
+
+###
+
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "documents_delete",
+  "description": "Delete documents",
+  "resource": "documents",
+  "action": "delete"
+}
+
+###
+
+# Users
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "users_manage",
+  "description": "Manage users",
+  "resource": "users",
+  "action": "manage"
+}
+
+###
+
+### Step 2: Assign permissions to Admin role
+# (Assume role_admin exists from 01-role-service.http)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_admin/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "role_admin",
+  "permission_id": "perm_documents_read"
+}
+
+###
+
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_admin/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "role_admin",
+  "permission_id": "perm_documents_write"
+}
+
+###
+
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_admin/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "role_admin",
+  "permission_id": "perm_documents_delete"
+}
+
+###
+
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_admin/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "role_admin",
+  "permission_id": "perm_users_manage"
+}
+
+###
+
+### Step 3: Assign permissions to Editor role
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_editor/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "role_editor",
+  "permission_id": "perm_documents_read"
+}
+
+###
+
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_editor/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "role_editor",
+  "permission_id": "perm_documents_write"
+}
+
+###
+
+### Step 4: Assign permissions to Viewer role
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_viewer/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "role_viewer",
+  "permission_id": "perm_documents_read"
+}
+
+###
+
+### Step 5: Verify role permissions
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_admin/permissions
+Authorization: Bearer {{accessToken}}
+
+###
+
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_editor/permissions
+Authorization: Bearer {{accessToken}}
+
+###
+
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_viewer/permissions
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Step 6: Verify user's effective permissions
+# (Assuming user has admin role from 01-role-service.http)
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-admin/permissions
+Authorization: Bearer {{accessToken}}
+
+# =============================================================================
+# ADVANCED PERMISSION SCENARIOS
+# =============================================================================
+
+### Scenario 1: Create API endpoint permissions
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "api_users_get",
+  "description": "GET /api/users",
+  "resource": "api:/users",
+  "action": "GET"
+}
+
+### Scenario 2: Create resource-specific permissions
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "document_publish",
+  "description": "Publish documents",
+  "resource": "documents",
+  "action": "publish",
+  "metadata": {
+    "requires_approval": true,
+    "visibility": "public"
+  }
+}
+
+### Scenario 3: Create time-sensitive permission
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "reports_download",
+  "description": "Download reports",
+  "resource": "reports",
+  "action": "download",
+  "metadata": {
+    "time_restriction": "business_hours",
+    "max_file_size": "100MB"
+  }
+}
+
+# =============================================================================
+# EDGE CASES & ERROR HANDLING
+# =============================================================================
+
+### Edge Case 1: Create permission with duplicate name (Should fail)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "read_documents",
+  "description": "Duplicate permission",
+  "resource": "documents",
+  "action": "read"
+}
+
+### Edge Case 2: Assign non-existent permission to role (Should fail)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/{{roleId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "{{roleId}}",
+  "permission_id": "perm_does_not_exist"
+}
+
+### Edge Case 3: Assign permission to non-existent role (Should fail)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_invalid/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "role_invalid",
+  "permission_id": "perm_read_documents"
+}
+
+### Edge Case 4: Revoke permission that was never assigned
+DELETE {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/{{roleId}}/permissions/perm_never_assigned
+Authorization: Bearer {{accessToken}}
+
+### Edge Case 5: Assign duplicate permission to role (Should be idempotent)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/{{roleId}}/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "{{roleId}}",
+  "permission_id": "perm_read_documents"
+}
+
+# =============================================================================
+# PERMISSION INHERITANCE VERIFICATION
+# =============================================================================
+
+### Verify permission inheritance
+# 1. Assign role to user
+# 2. Assign permissions to role
+# 3. Verify user gets permissions from role
+# 4. Add direct permission to user
+# 5. Verify user has both direct + inherited permissions
+
+### Step 1: User has Editor role (from 01-role-service.http)
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-editor/roles
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Step 2: Editor role has permissions
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/roles/role_editor/permissions
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Step 3: User's effective permissions (inherited from role)
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-editor/permissions
+Authorization: Bearer {{accessToken}}
+
+###
+
+### Step 4: Grant direct permission to user
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-editor/permissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-editor",
+  "permission_id": "perm_documents_publish"
+}
+
+###
+
+### Step 5: Verify combined permissions (direct + inherited)
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-editor/permissions
+Authorization: Bearer {{accessToken}}

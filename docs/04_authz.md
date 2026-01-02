@@ -48,12 +48,12 @@ Policy-based authorization using declarative policy languages (e.g., Rego, Cedar
 All implementations must adhere to the contracts defined in `contract.go`:
 
 ```go
-// See /04_authz/contract.go for interface definitions
+// See /authz/contract.go for interface definitions
 ```
 
 ## Usage Examples
 
-See `/examples/04_authz` folder for implementation examples.
+See `/examples/authz` folder for implementation examples.
 
 ## API Reference
 

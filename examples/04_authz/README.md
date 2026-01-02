@@ -14,7 +14,7 @@ Demonstrates Role-Based Access Control (RBAC):
 
 **Run**:
 ```bash
-go run examples/04_authz/01_rbac/main.go
+go run examples/authz/01_rbac/main.go
 ```
 
 **Key Concepts**:
@@ -39,7 +39,7 @@ Demonstrates Attribute-Based Access Control (ABAC):
 
 **Run**:
 ```bash
-go run examples/04_authz/02_abac/main.go
+go run examples/authz/02_abac/main.go
 ```
 
 **Key Concepts**:
@@ -70,7 +70,7 @@ Demonstrates Access Control Lists (ACL):
 
 **Run**:
 ```bash
-go run examples/04_authz/03_acl/main.go
+go run examples/authz/03_acl/main.go
 ```
 
 **Key Concepts**:
@@ -93,27 +93,27 @@ Each example is a standalone Go program. You can run them individually:
 
 ```bash
 # Run RBAC example
-go run examples/04_authz/01_rbac/main.go
+go run examples/authz/01_rbac/main.go
 
 # Run ABAC example
-go run examples/04_authz/02_abac/main.go
+go run examples/authz/02_abac/main.go
 
 # Run ACL example
-go run examples/04_authz/03_acl/main.go
+go run examples/authz/03_acl/main.go
 ```
 
 Or run all examples:
 
 ```bash
 # PowerShell
-Get-ChildItem examples/04_authz/*/main.go | ForEach-Object { 
+Get-ChildItem examples/authz/*/main.go | ForEach-Object { 
     Write-Host "Running $_"
     go run $_.FullName
     Write-Host ""
 }
 
 # Bash
-for dir in examples/04_authz/*/; do
+for dir in examples/authz/*/; do
     echo "Running ${dir}main.go"
     go run "${dir}main.go"
     echo ""
@@ -206,9 +206,9 @@ import (
     "context"
     "log"
     
-    subject "github.com/primadi/lokstra-auth/03_subject"
-    authz "github.com/primadi/lokstra-auth/04_authz"
-    "github.com/primadi/lokstra-auth/04_authz/rbac"
+    subject "github.com/primadi/lokstra-auth/rbac"
+    authz "github.com/primadi/lokstra-auth/authz"
+    "github.com/primadi/lokstra-auth/authz/rbac"
 )
 
 type DocumentHandler struct {

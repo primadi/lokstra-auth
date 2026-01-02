@@ -1,0 +1,294 @@
+### ============================================================
+### PLATFORM ADMIN API TESTS
+### Bootstrap and Platform-Level Operations
+### ============================================================
+
+@baseUrl = http://localhost:9090
+@apiPrefix = /api/auth
+
+### ============================================================
+### STEP 1: LOGIN AS PLATFORM ADMIN
+### ============================================================
+
+### 1.1 Platform Admin Login
+# Username: platform-admin
+# Password: PlatformAdmin@2025! (CHANGE THIS!)
+# Tenant: platform
+POST {{baseUrl}}{{apiPrefix}}/cred/basic/login
+Content-Type: application/json
+X-Tenant-ID: platform
+X-App-ID: platform-admin-app
+
+{
+  "username": "platform-admin",
+  "password": "PlatformAdmin@2025!",
+  "ip_address": "192.168.1.100",
+  "user_agent": "Mozilla/5.0"
+}
+
+### Save the access token from response
+# @name platformLogin
+# Response: { "access_token": "...", "refresh_token": "...", "user": {...} }
+
+@platformToken = {{platformLogin.response.body.access_token}}
+
+###
+
+### ============================================================
+### STEP 2: PLATFORM ADMIN OPERATIONS
+### ============================================================
+
+### 2.1 List All Tenants (Platform Admin Only)
+GET {{baseUrl}}{{apiPrefix}}/core/tenants
+Authorization: Bearer {{platformToken}}
+
+###
+
+### 2.2 Create New Tenant with Auto-Admin
+# This endpoint automatically creates:
+# - Tenant
+# - Default admin app
+# - Tenant admin user
+# - Assigns tenant-admin role
+POST {{baseUrl}}{{apiPrefix}}/core/tenants
+Authorization: Bearer {{platformToken}}
+Content-Type: application/json
+
+{
+  "id": "acme-corp",
+  "name": "Acme Corporation",
+  "domain": "acme-corp.com",
+  "db_dsn": "postgres://postgres:adm1n@localhost:5432/lokstra_db?sslmode=disable",
+  "db_schema": "acme_corp",
+  "settings": {
+    "max_users": 100,
+    "max_apps": 10
+  },
+  "admin": {
+    "username": "admin",
+    "email": "admin@acme-corp.com",
+    "password": "AcmeAdmin@2025!",
+    "full_name": "Acme Administrator"
+  }
+}
+
+###
+
+### 2.3 Get Tenant Details
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp
+Authorization: Bearer {{platformToken}}
+
+###
+
+### 2.4 Update Tenant Settings
+PUT {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp
+Authorization: Bearer {{platformToken}}
+Content-Type: application/json
+
+{
+  "name": "Acme Corporation Inc.",
+  "settings": {
+    "max_users": 200,
+    "max_apps": 20
+  }
+}
+
+###
+
+### 2.5 Suspend Tenant
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp/suspend
+Authorization: Bearer {{platformToken}}
+
+###
+
+### 2.6 Activate Tenant
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp/activate
+Authorization: Bearer {{platformToken}}
+
+###
+
+### 2.7 Delete Tenant (Dangerous!)
+DELETE {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp
+Authorization: Bearer {{platformToken}}
+
+###
+
+### ============================================================
+### STEP 3: LOGIN AS TENANT ADMIN
+### ============================================================
+
+### 3.1 Tenant Admin Login (Auto-created from Step 2.2)
+POST {{baseUrl}}{{apiPrefix}}/cred/basic/login
+Content-Type: application/json
+
+{
+  "tenant_id": "acme-corp",
+  "username": "admin",
+  "password": "AcmeAdmin@2025!",
+  "app_id": "acme-corp-admin"
+}
+
+### Save tenant admin token
+# @name tenantAdminLogin
+
+@tenantAdminToken = {{tenantAdminLogin.response.body.access_token}}
+
+###
+
+### ============================================================
+### STEP 4: TENANT ADMIN OPERATIONS
+### ============================================================
+
+### 4.1 Tenant Admin CANNOT List All Tenants (Should Fail)
+GET {{baseUrl}}{{apiPrefix}}/core/tenants
+Authorization: Bearer {{tenantAdminToken}}
+# Expected: 403 Forbidden - tenant admins can't see other tenants
+
+###
+
+### 4.2 Tenant Admin CAN Manage Their Tenant
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp
+Authorization: Bearer {{tenantAdminToken}}
+# Expected: 200 OK - can view own tenant
+
+###
+
+### 4.3 Tenant Admin CAN Create Apps in Their Tenant
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp/apps
+Authorization: Bearer {{tenantAdminToken}}
+Content-Type: application/json
+
+{
+  "id": "web-portal",
+  "name": "Web Portal",
+  "type": "web"
+}
+
+###
+
+### 4.4 Tenant Admin CAN Create Users in Their Tenant
+POST {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp/users
+Authorization: Bearer {{tenantAdminToken}}
+Content-Type: application/json
+
+{
+  "username": "alice",
+  "email": "alice@acme-corp.com",
+  "password": "Alice@2025!",
+  "full_name": "Alice Johnson"
+}
+
+###
+
+### ============================================================
+### STEP 5: TENANT OWNERSHIP VERIFICATION
+### ============================================================
+
+### 5.1 Check if User is Tenant Owner
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp/users/acme-corp-admin-user
+Authorization: Bearer {{tenantAdminToken}}
+
+# Response should include:
+# {
+#   "metadata": {
+#     "is_tenant_owner": true
+#   }
+# }
+
+###
+
+### 5.2 List Tenant Admins
+GET {{baseUrl}}{{apiPrefix}}/core/tenants/acme-corp/users?role=tenant-admin
+Authorization: Bearer {{tenantAdminToken}}
+
+###
+
+### ============================================================
+### STEP 6: PLATFORM ADMIN - ADVANCED OPERATIONS
+### ============================================================
+
+### 6.1 Get Platform Statistics
+GET {{baseUrl}}{{apiPrefix}}/platform/stats
+Authorization: Bearer {{platformToken}}
+
+# Expected response:
+# {
+#   "total_tenants": 10,
+#   "active_tenants": 8,
+#   "total_users": 1523,
+#   "total_apps": 45
+# }
+
+###
+
+### 6.2 Search Tenants
+GET {{baseUrl}}{{apiPrefix}}/core/tenants?search=acme&status=active
+Authorization: Bearer {{platformToken}}
+
+###
+
+### 6.3 Bulk Tenant Operations
+POST {{baseUrl}}{{apiPrefix}}/platform/tenants/bulk-suspend
+Authorization: Bearer {{platformToken}}
+Content-Type: application/json
+
+{
+  "tenant_ids": ["tenant-1", "tenant-2"],
+  "reason": "Payment overdue"
+}
+
+###
+
+### ============================================================
+### STEP 7: CHANGE PASSWORD (Security Best Practice)
+### ============================================================
+
+### 7.1 Platform Admin Changes Password
+POST {{baseUrl}}{{apiPrefix}}/auth/change-password
+Authorization: Bearer {{platformToken}}
+Content-Type: application/json
+
+{
+  "current_password": "PlatformAdmin@2025!",
+  "new_password": "NewSecurePassword@2025!",
+  "confirm_password": "NewSecurePassword@2025!"
+}
+
+###
+
+### 7.2 Tenant Admin Changes Password
+POST {{baseUrl}}{{apiPrefix}}/auth/change-password
+Authorization: Bearer {{tenantAdminToken}}
+Content-Type: application/json
+
+{
+  "current_password": "AcmeAdmin@2025!",
+  "new_password": "NewAcmePassword@2025!",
+  "confirm_password": "NewAcmePassword@2025!"
+}
+
+###
+
+### ============================================================
+### NOTES:
+### ============================================================
+# 1. Platform Admin (tenant: "platform")
+#    - Can CRUD all tenants
+#    - Can view cross-tenant statistics
+#    - Cannot access tenant-specific resources directly
+#
+# 2. Tenant Admin (auto-created with tenant)
+#    - Can manage their own tenant settings
+#    - Can CRUD users, apps, roles within their tenant
+#    - Cannot see or modify other tenants
+#
+# 3. Tenant Owner (is_tenant_owner: true in metadata)
+#    - Special flag for the first admin user
+#    - Can transfer ownership to another admin
+#    - Cannot be deleted unless ownership transferred
+#
+# 4. Bootstrap Process:
+#    Step 1: Run 001_bootstrap_platform_admin.sql
+#    Step 2: Login as platform-admin
+#    Step 3: Create tenants (auto-creates tenant admin)
+#    Step 4: Tenant admins manage their tenants

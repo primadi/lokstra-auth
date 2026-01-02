@@ -48,12 +48,12 @@ Refresh token mechanisms for token rotation and renewal.
 All implementations must adhere to the contracts defined in `contract.go`:
 
 ```go
-// See /02_token/contract.go for interface definitions
+// See /token/contract.go for interface definitions
 ```
 
 ## Usage Examples
 
-See `/examples/02_token` folder for implementation examples.
+See `/examples/token` folder for implementation examples.
 
 ## API Reference
 

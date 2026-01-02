@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://primadi.github.io/lokstra/schema/lokstra.schema.json
+ 
+configs:
+  server: ${SERVER:monolith.auth-server} # Deployment mode: monolith, microservices, development
+
+dbpool-definitions:
+  db_auth:
+    dsn: ${DB_AUTH_DSN:postgres://postgres:adm1n@localhost:5432/lokstra_db}
+    schema: ${DB_AUTH_SCHEMA:lokstra_auth}
+  db_main:
+    dsn: ${DB_MAIN_DSN:postgres://postgres:adm1n@localhost:5432/lokstra_db}
+    schema: ${DB_MAIN_SCHEMA:lokstra_auth}
+
+# Deployment modes
+deployments:
+  # Monolith: All services run in one server
+  monolith:
+    servers:
+      auth-server:
+        base-url: "http://localhost"
+        addr: ":9090"
+        published-services:
+          # core - Registration & Tenant Management
+          - tenant-service
+          - app-service
+          - branch-service
+          - user-service
+          - app-key-service
+          - credential-config-service
+
+          # credential - Authentication
+          - basic-auth-service
+          # - apikey-auth-service
+          # - oauth2-auth-service
+          # - passwordless-auth-service
+          # - passkey-auth-service
+
+          # token - Token Management
+          - token-service
+
+          # subject - Subject Resolution (future)
+          # - subject-service
+
+          # authz - Authorization (future)
+          # - authz-service

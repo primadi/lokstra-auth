@@ -2,7 +2,7 @@ package middleware
 
 import (
 	lokstraauth "github.com/primadi/lokstra-auth"
-	authz "github.com/primadi/lokstra-auth/04_authz"
+	authz "github.com/primadi/lokstra-auth/authz"
 	"github.com/primadi/lokstra/core/request"
 )
 
@@ -74,7 +74,7 @@ func RequirePermission(auth *lokstraauth.Auth, permission string) func(c *reques
 // DefaultForbiddenHandler returns 403 Forbidden
 func DefaultForbiddenHandler(c *request.Context, err error) error {
 	c.Resp.WithStatus(403)
-	return c.Resp.Json(map[string]interface{}{
+	return c.Resp.Json(map[string]any{
 		"error":   "Forbidden",
 		"message": err.Error(),
 	})

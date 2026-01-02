@@ -1,0 +1,434 @@
+### Subject API - Roles Management
+### RBAC - Role CRUD and User-Role Assignments
+
+@baseUrl = http://localhost:9090/api/auth/subject/tenants/{{tenantId}}/apps/{{appId}}/roles
+@contentType = application/json
+@tenantId = acme-corp
+@appId = main-app
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+# Prerequisites:
+# 1. Tenant and App must exist (use core tests to create)
+# 2. Users must exist (use core/04-user-service.http)
+# 3. Have valid access_token
+
+# =============================================================================
+# VARIABLES - UPDATE WITH ACTUAL VALUES
+# =============================================================================
+
+@userId = usr-123
+@roleId = role_admin
+@adminRoleId = role_admin
+@editorRoleId = role_editor
+@viewerRoleId = role_viewer
+
+# =============================================================================
+# ROLE CRUD OPERATIONS
+# =============================================================================
+
+### 1. Create Admin Role
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "admin",
+  "description": "Administrator role with full system access",
+  "metadata": {
+    "level": "system",
+    "priority": 100,
+    "created_by": "system"
+  }
+}
+
+### 2. Create Editor Role
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "editor",
+  "description": "Content editor with read and write access",
+  "metadata": {
+    "level": "content",
+    "priority": 50
+  }
+}
+
+### 3. Create Viewer Role
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "viewer",
+  "description": "Read-only viewer role",
+  "metadata": {
+    "level": "content",
+    "priority": 10
+  }
+}
+
+### 4. Get Role by ID
+GET {{baseUrl}}/{{roleId}}
+Authorization: Bearer {{accessToken}}
+
+### 5. Update Role
+PUT {{baseUrl}}/{{editorRoleId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "{{editorRoleId}}",
+  "description": "Senior content editor with advanced permissions",
+  "status": "active",
+  "metadata": {
+    "level": "content",
+    "priority": 60,
+    "updated_by": "admin"
+  }
+}
+
+### 6. Delete Role
+DELETE {{baseUrl}}/{{viewerRoleId}}
+Authorization: Bearer {{accessToken}}
+
+### 7. List All Roles
+GET {{baseUrl}}?limit=50&offset=0
+Authorization: Bearer {{accessToken}}
+
+### 8. List Active Roles Only
+GET {{baseUrl}}?status=active&limit=100
+Authorization: Bearer {{accessToken}}
+
+### 9. List Roles with Pagination
+GET {{baseUrl}}?limit=10&offset=20
+Authorization: Bearer {{accessToken}}
+
+# =============================================================================
+# USER-ROLE ASSIGNMENTS
+# =============================================================================
+
+### 10. Assign Admin Role to User
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/{{userId}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "{{userId}}",
+  "role_id": "{{adminRoleId}}"
+}
+
+### 11. Assign Editor Role to User
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-002/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-002",
+  "role_id": "{{editorRoleId}}"
+}
+
+### 12. Revoke Role from User
+DELETE {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/{{userId}}/roles/{{editorRoleId}}
+Authorization: Bearer {{accessToken}}
+
+### 13. List User's Roles
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/{{userId}}/roles
+Authorization: Bearer {{accessToken}}
+
+### 14. Assign Multiple Roles Scenario
+# Assign editor role to multiple users
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-003/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-003",
+  "role_id": "{{editorRoleId}}"
+}
+
+###
+
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-004/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-004",
+  "role_id": "{{editorRoleId}}"
+}
+
+# =============================================================================
+# COMPLETE RBAC SETUP WORKFLOW
+# =============================================================================
+
+### WORKFLOW: Set up complete role hierarchy
+
+### Step 1: Create all role tiers
+# (Already done in tests 1-3)
+
+### Step 2: Create Manager Role (mid-tier)
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "manager",
+  "description": "Team manager with elevated permissions",
+  "metadata": {
+    "level": "management",
+    "priority": 75,
+    "department": "operations"
+  }
+}
+
+###
+
+### Step 3: Assign appropriate roles to users
+# Admin
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-admin/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-admin",
+  "role_id": "{{adminRoleId}}"
+}
+
+###
+
+# Manager
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-manager/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-manager",
+  "role_id": "role_manager"
+}
+
+###
+
+# Editor
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-editor/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-editor",
+  "role_id": "{{editorRoleId}}"
+}
+
+###
+
+### Step 4: Verify role assignments
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-admin/roles
+Authorization: Bearer {{accessToken}}
+
+###
+
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-manager/roles
+Authorization: Bearer {{accessToken}}
+
+###
+
+GET {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-editor/roles
+Authorization: Bearer {{accessToken}}
+
+# =============================================================================
+# EDGE CASES & ERROR HANDLING
+# =============================================================================
+
+### Edge Case 1: Create role with duplicate name (Should fail)
+POST {{baseUrl}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "name": "admin",
+  "description": "Duplicate admin role"
+}
+
+### Edge Case 2: Assign non-existent role (Should fail)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/{{userId}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "{{userId}}",
+  "role_id": "role_does_not_exist"
+}
+
+### Edge Case 3: Get non-existent role (Should return 404)
+GET {{baseUrl}}/role_xyz_invalid
+Authorization: Bearer {{accessToken}}
+
+### Edge Case 4: Assign role to non-existent user (Should fail)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-nonexistent/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-nonexistent",
+  "role_id": "{{adminRoleId}}"
+}
+
+### Edge Case 5: Revoke role that was never assigned
+DELETE {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/{{userId}}/roles/role_never_assigned
+Authorization: Bearer {{accessToken}}
+
+### Edge Case 6: Update non-existent role
+PUT {{baseUrl}}/role_invalid
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "role_invalid",
+  "description": "This should fail"
+}
+
+# =============================================================================
+# MULTI-TENANT SCENARIOS
+# =============================================================================
+
+### Scenario 1: Create same role name in different tenants (Should succeed)
+POST {{baseUrl}}/tenants/tenant-002/apps/{{appId}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "tenant-002",
+  "app_id": "{{appId}}",
+  "name": "admin",
+  "description": "Admin for tenant-002"
+}
+
+### Scenario 2: Create same role name in different apps (Should succeed)
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/app-002/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "app-002",
+  "name": "admin",
+  "description": "Admin for app-002"
+}
+
+### Scenario 3: Try to assign role from different tenant (Should fail)
+POST {{baseUrl}}/tenants/tenant-002/apps/{{appId}}/users/{{userId}}/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "tenant-002",
+  "app_id": "{{appId}}",
+  "user_id": "{{userId}}",
+  "role_id": "{{adminRoleId}}"
+}
+
+# =============================================================================
+# STATUS MANAGEMENT
+# =============================================================================
+
+### Disable Role (Set to inactive)
+PUT {{baseUrl}}/{{viewerRoleId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "{{viewerRoleId}}",
+  "status": "inactive"
+}
+
+### Reactivate Role
+PUT {{baseUrl}}/{{viewerRoleId}}
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "role_id": "{{viewerRoleId}}",
+  "status": "active"
+}
+
+# =============================================================================
+# BULK OPERATIONS
+# =============================================================================
+
+### Assign same role to multiple users
+# User 1
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-bulk-001/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-bulk-001",
+  "role_id": "{{viewerRoleId}}"
+}
+
+###
+
+# User 2
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-bulk-002/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-bulk-002",
+  "role_id": "{{viewerRoleId}}"
+}
+
+###
+
+# User 3
+POST {{baseUrl}}/tenants/{{tenantId}}/apps/{{appId}}/users/usr-bulk-003/roles
+Content-Type: {{contentType}}
+Authorization: Bearer {{accessToken}}
+
+{
+  "tenant_id": "{{tenantId}}",
+  "app_id": "{{appId}}",
+  "user_id": "usr-bulk-003",
+  "role_id": "{{viewerRoleId}}"
+}

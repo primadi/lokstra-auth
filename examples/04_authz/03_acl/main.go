@@ -5,41 +5,47 @@ import (
 	"fmt"
 	"log"
 
-	subject "github.com/primadi/lokstra-auth/03_subject"
-	authz "github.com/primadi/lokstra-auth/04_authz"
-	"github.com/primadi/lokstra-auth/04_authz/acl"
+	authz "github.com/primadi/lokstra-auth/authz"
+	"github.com/primadi/lokstra-auth/authz/acl"
+	identity "github.com/primadi/lokstra-auth/identity"
 )
 
 func main() {
 	fmt.Printf("=== ACL (Access Control List) Example ===\n")
 
 	ctx := context.Background()
+	tenantID := "demo-tenant"
+	appID := "demo-app"
 
 	// Create ACL manager
 	manager := acl.NewManager()
 
 	// Document 1: Public document
 	// Grant read permission to everyone via "public" role
-	manager.Grant(ctx, "document", "doc-public", "public", "role", "read")
+	manager.Grant(ctx, tenantID, appID, "public", &authz.Resource{Type: "document", ID: "doc-public"}, authz.ActionRead)
 
 	// Document 2: Team document
 	// Grant full access to team members
-	manager.Grant(ctx, "document", "doc-team", "user-1", "user", "read", "write", "delete")
-	manager.Grant(ctx, "document", "doc-team", "user-2", "user", "read", "write")
-	manager.Grant(ctx, "document", "doc-team", "editor", "role", "read", "write")
+	manager.Grant(ctx, tenantID, appID, "user-1", &authz.Resource{Type: "document", ID: "doc-team"}, authz.ActionRead)
+	manager.Grant(ctx, tenantID, appID, "user-1", &authz.Resource{Type: "document", ID: "doc-team"}, authz.ActionWrite)
+	manager.Grant(ctx, tenantID, appID, "user-1", &authz.Resource{Type: "document", ID: "doc-team"}, authz.ActionDelete)
+	manager.Grant(ctx, tenantID, appID, "user-2", &authz.Resource{Type: "document", ID: "doc-team"}, authz.ActionRead)
+	manager.Grant(ctx, tenantID, appID, "user-2", &authz.Resource{Type: "document", ID: "doc-team"}, authz.ActionWrite)
 
 	// Document 3: Owner-only document
-	manager.Grant(ctx, "document", "doc-private", "user-1", "user", "*") // All permissions
+	manager.Grant(ctx, tenantID, appID, "user-1", &authz.Resource{Type: "document", ID: "doc-private"}, authz.ActionRead)
+	manager.Grant(ctx, tenantID, appID, "user-1", &authz.Resource{Type: "document", ID: "doc-private"}, authz.ActionWrite)
+	manager.Grant(ctx, tenantID, appID, "user-1", &authz.Resource{Type: "document", ID: "doc-private"}, authz.ActionDelete)
 
 	fmt.Println("ACL Configuration:")
-	fmt.Println("- doc-public: role:public → read")
-	fmt.Println("- doc-team: user-1 → read,write,delete | user-2 → read,write | role:editor → read,write")
-	fmt.Println("- doc-private: user-1 → *")
+	fmt.Println("- doc-public: public → read")
+	fmt.Println("- doc-team: user-1 → read,write,delete | user-2 → read,write")
+	fmt.Println("- doc-private: user-1 → read,write,delete")
 	fmt.Println()
 
 	// Test Case 1: User-1 accessing team document (write)
-	user1Identity := &subject.IdentityContext{
-		Subject: &subject.Subject{
+	user1Identity := &identity.IdentityContext{
+		Subject: &identity.Subject{
 			ID:   "user-1",
 			Type: "user",
 		},
@@ -68,8 +74,8 @@ func main() {
 	fmt.Printf("  Reason: %s\n\n", decision1.Reason)
 
 	// Test Case 2: User-2 trying to delete team document (should be denied)
-	user2Identity := &subject.IdentityContext{
-		Subject: &subject.Subject{
+	user2Identity := &identity.IdentityContext{
+		Subject: &identity.Subject{
 			ID:   "user-2",
 			Type: "user",
 		},
@@ -98,8 +104,8 @@ func main() {
 	fmt.Printf("  Reason: %s\n\n", decision2.Reason)
 
 	// Test Case 3: Editor role accessing team document
-	editorIdentity := &subject.IdentityContext{
-		Subject: &subject.Subject{
+	editorIdentity := &identity.IdentityContext{
+		Subject: &identity.Subject{
 			ID:   "user-3",
 			Type: "user",
 		},
@@ -153,20 +159,20 @@ func main() {
 	fmt.Printf("=== ACL Management Functions ===\n")
 
 	// Get all permissions for user-1 on team document
-	perms, _ := manager.GetPermissions(ctx, "document", "doc-team", "user-1", user1Identity)
+	perms, _ := manager.GetPermissions(ctx, tenantID, appID, "document", "doc-team", "user-1", user1Identity)
 	fmt.Printf("User-1 permissions on doc-team: %v\n", perms)
 
 	// Get all subjects with access to team document
-	subjects, _ := manager.GetSubjects(ctx, "document", "doc-team")
+	subjects, _ := manager.GetSubjects(ctx, tenantID, appID, "document", "doc-team")
 	fmt.Printf("Subjects with access to doc-team: %v\n", subjects)
 
 	// Revoke write permission from user-2
-	manager.Revoke(ctx, "document", "doc-team", "user-2", "user", "write")
-	perms2, _ := manager.GetPermissions(ctx, "document", "doc-team", "user-2", user2Identity)
+	manager.Revoke(ctx, tenantID, appID, "user-2", &authz.Resource{Type: "document", ID: "doc-team"}, authz.ActionWrite)
+	perms2, _ := manager.GetPermissions(ctx, tenantID, appID, "document", "doc-team", "user-2", user2Identity)
 	fmt.Printf("\nAfter revoking write from user-2: %v\n", perms2)
 
 	// Copy ACL from one document to another
-	manager.CopyACL(ctx, "document", "doc-team", "document", "doc-new")
-	perms3, _ := manager.GetPermissions(ctx, "document", "doc-new", "user-1", user1Identity)
+	manager.CopyACL(ctx, tenantID, appID, "document", "doc-team", "document", "doc-new")
+	perms3, _ := manager.GetPermissions(ctx, tenantID, appID, "document", "doc-new", "user-1", user1Identity)
 	fmt.Printf("Copied ACL to doc-new, user-1 permissions: %v\n", perms3)
 }

@@ -1,10 +1,10 @@
 package lokstraauth
 
 import (
-	credential "github.com/primadi/lokstra-auth/01_credential"
-	token "github.com/primadi/lokstra-auth/02_token"
-	subject "github.com/primadi/lokstra-auth/03_subject"
-	authz "github.com/primadi/lokstra-auth/04_authz"
+	authz "github.com/primadi/lokstra-auth/authz"
+	credential "github.com/primadi/lokstra-auth/credential/domain"
+	identity "github.com/primadi/lokstra-auth/identity"
+	token "github.com/primadi/lokstra-auth/token"
 )
 
 // Builder provides a fluent API for building Auth runtime
@@ -37,14 +37,14 @@ func (b *Builder) WithTokenManager(manager token.TokenManager) *Builder {
 	return b
 }
 
-// WithSubjectResolver sets the subject resolver
-func (b *Builder) WithSubjectResolver(resolver subject.SubjectResolver) *Builder {
-	b.auth.SetSubjectResolver(resolver)
+// WithIdentityResolver sets the identity resolver
+func (b *Builder) WithIdentityResolver(resolver identity.IdentityResolver) *Builder {
+	b.auth.SetIdentityResolver(resolver)
 	return b
 }
 
 // WithIdentityContextBuilder sets the identity context builder
-func (b *Builder) WithIdentityContextBuilder(builder subject.IdentityContextBuilder) *Builder {
+func (b *Builder) WithIdentityContextBuilder(builder identity.IdentityContextBuilder) *Builder {
 	b.auth.SetIdentityContextBuilder(builder)
 	return b
 }
@@ -86,9 +86,9 @@ func (b *Builder) SetDefaultAuthenticator(authType string) *Builder {
 }
 
 // AddMetadata adds metadata to the configuration
-func (b *Builder) AddMetadata(key string, value interface{}) *Builder {
+func (b *Builder) AddMetadata(key string, value any) *Builder {
 	if b.auth.config.Metadata == nil {
-		b.auth.config.Metadata = make(map[string]interface{})
+		b.auth.config.Metadata = make(map[string]any)
 	}
 	b.auth.config.Metadata[key] = value
 	return b
