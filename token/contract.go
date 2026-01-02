@@ -172,6 +172,9 @@ type TokenManager interface {
 
 	// Revoke invalidates a refresh token
 	Revoke(ctx context.Context, refreshToken string) error
+
+	// GenerateResetToken generates a one-time password reset token for email
+	GenerateResetToken(ctx context.Context, email string) (string, error)
 }
 
 // RefreshTokenHandler handles token refresh operations

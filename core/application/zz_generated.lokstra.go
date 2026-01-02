@@ -5,14 +5,15 @@
 package application
 
 import (
-	"github.com/primadi/lokstra/core/deploy"
-	"github.com/primadi/lokstra/core/proxy"
-	"github.com/primadi/lokstra/lokstra_registry"
 	context "context"
+
 	domain "github.com/primadi/lokstra-auth/core/domain"
 	validator "github.com/primadi/lokstra-auth/credential/infrastructure/validator"
 	repository "github.com/primadi/lokstra-auth/infrastructure/repository"
+	"github.com/primadi/lokstra/core/deploy"
+	"github.com/primadi/lokstra/core/proxy"
 	request "github.com/primadi/lokstra/core/request"
+	"github.com/primadi/lokstra/lokstra_registry"
 )
 
 // Auto-register on package import
@@ -71,13 +72,12 @@ func (s *CredentialConfigServiceRemote) UpdateTenantConfig(p *request.Context) (
 	return proxy.CallWithData[*domain.CredentialConfig](s.proxyService, "UpdateTenantConfig", p)
 }
 
-
 func CredentialConfigServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &CredentialConfigService{
-		AppService: deps["app-service"].(*AppService),
+		AppService:    deps["app-service"].(*AppService),
 		TenantService: deps["tenant-service"].(*TenantService),
 	}
-	
+
 	return svc
 }
 
@@ -103,7 +103,7 @@ func RegisterCredentialConfigService() {
 		CredentialConfigServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/tenants/{tenant_id}/config/credentials",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"GetAppConfig": {
 					Path: "GET /apps/{app_id}",
@@ -125,10 +125,9 @@ func RegisterCredentialConfigService() {
 	lokstra_registry.RegisterLazyService("credential-config-service",
 		"credential-config-service-factory",
 		map[string]any{
-			"depends-on": []string{ "app-service", "tenant-service", },
+			"depends-on": []string{"app-service", "tenant-service"},
 		})
 }
-
 
 // ============================================================
 // FILE: app_key_service.go
@@ -183,13 +182,12 @@ func (s *AppKeyServiceRemote) RotateKey(p *request.Context) (*domain.AppKeyRespo
 	return proxy.CallWithData[*domain.AppKeyResponse](s.proxyService, "RotateKey", p)
 }
 
-
 func AppKeyServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &AppKeyService{
 		AppService: deps["app-service"].(*AppService),
-		Store: deps["@store.app-key-store"].(repository.AppKeyStore),
+		Store:      deps["@store.app-key-store"].(repository.AppKeyStore),
 	}
-	
+
 	return svc
 }
 
@@ -215,7 +213,7 @@ func RegisterAppKeyService() {
 		AppKeyServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/tenants/{tenant_id}/apps/{app_id}/keys",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"DeleteKey": {
 					Path: "DELETE /{key_id}",
@@ -243,10 +241,9 @@ func RegisterAppKeyService() {
 	lokstra_registry.RegisterLazyService("app-key-service",
 		"app-key-service-factory",
 		map[string]any{
-			"depends-on": []string{ "app-service", "@store.app-key-store", },
+			"depends-on": []string{"app-service", "@store.app-key-store"},
 		})
 }
-
 
 // ============================================================
 // FILE: app_service.go
@@ -313,14 +310,13 @@ func (s *AppServiceRemote) UpdateApp(p *request.Context) error {
 	return proxy.Call(s.proxyService, "UpdateApp", p)
 }
 
-
 func AppServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &AppService{
-		Store: deps["@store.app-store"].(repository.AppStore),
-		UserAppStore: deps["@store.user-app-store"].(repository.UserAppStore),
+		Store:         deps["@store.app-store"].(repository.AppStore),
+		UserAppStore:  deps["@store.user-app-store"].(repository.UserAppStore),
 		TenantService: deps["tenant-service"].(*TenantService),
 	}
-	
+
 	return svc
 }
 
@@ -346,7 +342,7 @@ func RegisterAppService() {
 		AppServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/tenants/{tenant_id}/apps",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"ActivateApp": {
 					Path: "POST /{id}/activate",
@@ -380,10 +376,9 @@ func RegisterAppService() {
 	lokstra_registry.RegisterLazyService("app-service",
 		"app-service-factory",
 		map[string]any{
-			"depends-on": []string{ "@store.app-store", "@store.user-app-store", "tenant-service", },
+			"depends-on": []string{"@store.app-store", "@store.user-app-store", "tenant-service"},
 		})
 }
-
 
 // ============================================================
 // FILE: audit_log_service.go
@@ -426,12 +421,11 @@ func (s *AuditLogServiceRemote) ListAuditLogs(p *request.Context) (*ListAuditLog
 	return proxy.CallWithData[*ListAuditLogsResponse](s.proxyService, "ListAuditLogs", p)
 }
 
-
 func AuditLogServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &AuditLogService{
 		Store: deps["@store.audit-log-store"].(repository.AuditLogStore),
 	}
-	
+
 	return svc
 }
 
@@ -457,7 +451,7 @@ func RegisterAuditLogService() {
 		AuditLogServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/audit/logs",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"CleanupOldAuditLogs": {
 					Path: "POST /cleanup",
@@ -479,10 +473,9 @@ func RegisterAuditLogService() {
 	lokstra_registry.RegisterLazyService("audit-log-service",
 		"audit-log-service-factory",
 		map[string]any{
-			"depends-on": []string{ "@store.audit-log-store", },
+			"depends-on": []string{"@store.audit-log-store"},
 		})
 }
-
 
 // ============================================================
 // FILE: bootstrap_service.go
@@ -513,15 +506,14 @@ func (s *BootstrapServiceRemote) IsPlatformInitialized(p context.Context) (bool,
 	return proxy.CallWithData[bool](s.proxyService, "IsPlatformInitialized", p)
 }
 
-
 func BootstrapServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &BootstrapService{
-		appRepo: deps["@store.app-store"].(repository.AppStore),
-		tenantRepo: deps["@store.tenant-store"].(repository.TenantStore),
+		appRepo:     deps["@store.app-store"].(repository.AppStore),
+		tenantRepo:  deps["@store.tenant-store"].(repository.TenantStore),
 		userAppRepo: deps["@store.user-app-store"].(repository.UserAppStore),
-		userRepo: deps["@store.user-store"].(repository.UserStore),
+		userRepo:    deps["@store.user-store"].(repository.UserStore),
 	}
-	
+
 	return svc
 }
 
@@ -547,7 +539,7 @@ func RegisterBootstrapService() {
 		BootstrapServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/bootstrap",
-			Middlewares: []string{  },
+			Middlewares: []string{},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"CreateTenantWithAdmin": {
 					Path: "POST /",
@@ -563,10 +555,9 @@ func RegisterBootstrapService() {
 	lokstra_registry.RegisterLazyService("bootstrap-service",
 		"bootstrap-service-factory",
 		map[string]any{
-			"depends-on": []string{ "@store.app-store", "@store.tenant-store", "@store.user-app-store", "@store.user-store", },
+			"depends-on": []string{"@store.app-store", "@store.tenant-store", "@store.user-app-store", "@store.user-store"},
 		})
 }
-
 
 // ============================================================
 // FILE: branch_service.go
@@ -627,13 +618,12 @@ func (s *BranchServiceRemote) UpdateBranch(p *request.Context) error {
 	return proxy.Call(s.proxyService, "UpdateBranch", p)
 }
 
-
 func BranchServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &BranchService{
 		AppService: deps["app-service"].(*AppService),
-		Store: deps["@store.branch-store"].(repository.BranchStore),
+		Store:      deps["@store.branch-store"].(repository.BranchStore),
 	}
-	
+
 	return svc
 }
 
@@ -659,7 +649,7 @@ func RegisterBranchService() {
 		BranchServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/tenants/{tenant_id}/apps/{app_id}/branches",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"ActivateBranch": {
 					Path: "POST /{id}/activate",
@@ -690,10 +680,9 @@ func RegisterBranchService() {
 	lokstra_registry.RegisterLazyService("branch-service",
 		"branch-service-factory",
 		map[string]any{
-			"depends-on": []string{ "app-service", "@store.branch-store", },
+			"depends-on": []string{"app-service", "@store.branch-store"},
 		})
 }
-
 
 // ============================================================
 // FILE: credential_provider_service.go
@@ -766,14 +755,13 @@ func (s *CredentialProviderServiceRemote) UpdateProvider(p *request.Context) (*d
 	return proxy.CallWithData[*domain.CredentialProvider](s.proxyService, "UpdateProvider", p)
 }
 
-
 func CredentialProviderServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &CredentialProviderService{
-		appStore: deps["@store.app-store"].(repository.AppStore),
+		appStore:      deps["@store.app-store"].(repository.AppStore),
 		providerStore: deps["@store.credential-provider-store"].(repository.CredentialProviderStore),
-		tenantStore: deps["@store.tenant-store"].(repository.TenantStore),
+		tenantStore:   deps["@store.tenant-store"].(repository.TenantStore),
 	}
-	
+
 	return svc
 }
 
@@ -799,7 +787,7 @@ func RegisterCredentialProviderService() {
 		CredentialProviderServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/tenants/{tenant_id}/credential-providers",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"CreateProvider": {
 					Path: "POST /",
@@ -836,10 +824,9 @@ func RegisterCredentialProviderService() {
 	lokstra_registry.RegisterLazyService("credential-provider-service",
 		"credential-provider-service-factory",
 		map[string]any{
-			"depends-on": []string{ "@store.app-store", "@store.credential-provider-store", "@store.tenant-store", },
+			"depends-on": []string{"@store.app-store", "@store.credential-provider-store", "@store.tenant-store"},
 		})
 }
-
 
 // ============================================================
 // FILE: identity_lookup_service.go
@@ -870,13 +857,12 @@ func (s *IdentityLookupServiceRemote) GetOrCreateUserByProvider(p *request.Conte
 	return proxy.CallWithData[*domain.UserWithIdentity](s.proxyService, "GetOrCreateUserByProvider", p)
 }
 
-
 func IdentityLookupServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &IdentityLookupService{
 		userIdentityStore: deps["@store.user-identity-store"].(repository.UserIdentityStore),
-		userStore: deps["@store.user-store"].(repository.UserStore),
+		userStore:         deps["@store.user-store"].(repository.UserStore),
 	}
-	
+
 	return svc
 }
 
@@ -902,7 +888,7 @@ func RegisterIdentityLookupService() {
 		IdentityLookupServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/tenants/{tenant_id}/identities",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"FindUserByProvider": {
 					Path: "GET /find-by-provider/{provider}/{provider_id}",
@@ -918,10 +904,9 @@ func RegisterIdentityLookupService() {
 	lokstra_registry.RegisterLazyService("identity-lookup-service",
 		"identity-lookup-service-factory",
 		map[string]any{
-			"depends-on": []string{ "@store.user-identity-store", "@store.user-store", },
+			"depends-on": []string{"@store.user-identity-store", "@store.user-store"},
 		})
 }
-
 
 // ============================================================
 // FILE: tenant_service.go
@@ -982,15 +967,14 @@ func (s *TenantServiceRemote) UpdateTenant(p *request.Context) (*domain.Tenant, 
 	return proxy.CallWithData[*domain.Tenant](s.proxyService, "UpdateTenant", p)
 }
 
-
 func TenantServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &TenantService{
-		AppStore: deps["@store.app-store"].(repository.AppStore),
-		Store: deps["@store.tenant-store"].(repository.TenantStore),
+		AppStore:     deps["@store.app-store"].(repository.AppStore),
+		TenantStore:  deps["@store.tenant-store"].(repository.TenantStore),
 		UserAppStore: deps["@store.user-app-store"].(repository.UserAppStore),
-		UserStore: deps["@store.user-store"].(repository.UserStore),
+		UserStore:    deps["@store.user-store"].(repository.UserStore),
 	}
-	
+
 	return svc
 }
 
@@ -1016,7 +1000,7 @@ func RegisterTenantService() {
 		TenantServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/tenants",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"ActivateTenant": {
 					Path: "POST /{id}/activate",
@@ -1047,10 +1031,9 @@ func RegisterTenantService() {
 	lokstra_registry.RegisterLazyService("tenant-service",
 		"tenant-service-factory",
 		map[string]any{
-			"depends-on": []string{ "@store.app-store", "@store.tenant-store", "@store.user-app-store", "@store.user-store", },
+			"depends-on": []string{"@store.app-store", "@store.tenant-store", "@store.user-app-store", "@store.user-store"},
 		})
 }
-
 
 // ============================================================
 // FILE: user_identity_service.go
@@ -1099,13 +1082,12 @@ func (s *UserIdentityServiceRemote) UpdateIdentity(p *request.Context) (*domain.
 	return proxy.CallWithData[*domain.UserIdentity](s.proxyService, "UpdateIdentity", p)
 }
 
-
 func UserIdentityServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &UserIdentityService{
 		userIdentityStore: deps["@store.user-identity-store"].(repository.UserIdentityStore),
-		userStore: deps["@store.user-store"].(repository.UserStore),
+		userStore:         deps["@store.user-store"].(repository.UserStore),
 	}
-	
+
 	return svc
 }
 
@@ -1131,7 +1113,7 @@ func RegisterUserIdentityService() {
 		UserIdentityServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/tenants/{tenant_id}/users/{user_id}/identities",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"GetIdentity": {
 					Path: "GET /{identity_id}",
@@ -1156,10 +1138,9 @@ func RegisterUserIdentityService() {
 	lokstra_registry.RegisterLazyService("user-identity-service",
 		"user-identity-service-factory",
 		map[string]any{
-			"depends-on": []string{ "@store.user-identity-store", "@store.user-store", },
+			"depends-on": []string{"@store.user-identity-store", "@store.user-store"},
 		})
 }
-
 
 // ============================================================
 // FILE: user_service.go
@@ -1262,16 +1243,15 @@ func (s *UserServiceRemote) UpdateUser(p *request.Context) error {
 	return proxy.Call(s.proxyService, "UpdateUser", p)
 }
 
-
 func UserServiceFactory(deps map[string]any, config map[string]any) any {
 	svc := &UserService{
-		AppService: deps["app-service"].(*AppService),
-		Validator: deps["credential-validator"].(validator.CredentialValidator),
-		UserAppStore: deps["@store.user-app-store"].(repository.UserAppStore),
-		Store: deps["@store.user-store"].(repository.UserStore),
+		AppService:    deps["app-service"].(*AppService),
+		Validator:     deps["credential-validator"].(validator.CredentialValidator),
+		UserAppStore:  deps["@store.user-app-store"].(repository.UserAppStore),
+		Store:         deps["@store.user-store"].(repository.UserStore),
 		TenantService: deps["tenant-service"].(*TenantService),
 	}
-	
+
 	return svc
 }
 
@@ -1297,7 +1277,7 @@ func RegisterUserService() {
 		UserServiceRemoteFactory,
 		&deploy.ServiceTypeConfig{
 			PathPrefix:  "${api-auth-prefix:/api/auth}/core/tenants/{tenant_id}/users",
-			Middlewares: []string{ "recovery", "request_logger", "auth" },
+			Middlewares: []string{"recovery", "request_logger", "auth"},
 			RouteOverrides: map[string]deploy.RouteConfig{
 				"ActivateUser": {
 					Path: "POST /id/{id}/activate",
@@ -1349,10 +1329,6 @@ func RegisterUserService() {
 	lokstra_registry.RegisterLazyService("user-service",
 		"user-service-factory",
 		map[string]any{
-			"depends-on": []string{ "app-service", "credential-validator", "@store.user-app-store", "@store.user-store", "tenant-service", },
+			"depends-on": []string{"app-service", "credential-validator", "@store.user-app-store", "@store.user-store", "tenant-service"},
 		})
 }
-
-
-
-

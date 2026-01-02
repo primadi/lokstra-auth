@@ -10,7 +10,7 @@ import (
 // TokenService handles token validation, refresh, and revocation via HTTP.
 // @RouterService name="token-service", prefix="${api-auth-prefix:/api/auth}/token", middlewares=["recovery", "request_logger"]
 type TokenService struct {
-	// @Inject "token-manager"
+	// @Inject "@token-manager"
 	TokenManager token.TokenManager
 }
 

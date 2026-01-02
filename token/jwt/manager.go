@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -19,76 +20,20 @@ var (
 	ErrMissingClaims    = errors.New("missing required claims")
 )
 
-// Config holds JWT configuration
-type Config struct {
-	// SigningMethod is the signing algorithm (HS256, RS256, ES256, etc.)
-	SigningMethod jwt.SigningMethod
-
-	// SigningKey is the key used to sign tokens
-	SigningKey any
-
-	// VerifyingKey is the key used to verify tokens (can be same as SigningKey)
-	VerifyingKey any
-
-	// Issuer is the token issuer
-	Issuer string
-
-	// Audience is the intended audience
-	Audience []string
-
-	// AccessTokenDuration is how long access tokens are valid
-	AccessTokenDuration time.Duration
-
-	// RefreshTokenDuration is how long refresh tokens are valid
-	RefreshTokenDuration time.Duration
-
-	// EnableRevocation enables token revocation support
-	EnableRevocation bool
-
-	// RevocationList is the revocation list (optional)
-	RevocationList token.TokenRevocationList
-}
-
-// DefaultConfig returns a default JWT configuration
-func DefaultConfig(secret string) *Config {
-	return &Config{
-		SigningMethod:        jwt.SigningMethodHS256,
-		SigningKey:           []byte(secret),
-		VerifyingKey:         []byte(secret),
-		Issuer:               "lokstra-auth",
-		Audience:             []string{"lokstra"},
-		AccessTokenDuration:  15 * time.Minute,
-		RefreshTokenDuration: 7 * 24 * time.Hour,
-	}
-}
-
 // Manager handles JWT token generation and verification
+// @Service "jwt-token-manager"
 type Manager struct {
-	config         *Config
-	revocationList token.TokenRevocationList
-}
+	// @InjectCfgValue "jwt"
+	Config *Config
 
-// NewManager creates a new JWT manager
-func NewManager(config *Config) *Manager {
-	m := &Manager{
-		config: config,
-	}
-
-	if config.EnableRevocation {
-		if config.RevocationList != nil {
-			m.revocationList = config.RevocationList
-		} else {
-			m.revocationList = NewInMemoryRevocationList()
-		}
-	}
-
-	return m
+	// @Inject "@token-revocation-list"
+	RevocationList token.TokenRevocationList
 }
 
 // Generate creates a new JWT token from the provided claims
 func (m *Manager) Generate(ctx context.Context, claims token.Claims) (*token.Token, error) {
 	now := time.Now()
-	expiresAt := now.Add(m.config.AccessTokenDuration)
+	expiresAt := now.Add(m.Config.AccessTokenDuration)
 
 	// Validate required multi-tenant claims
 	tenantID, hasTenant := claims.GetTenantID()
@@ -112,22 +57,20 @@ func (m *Manager) Generate(ctx context.Context, claims token.Claims) (*token.Tok
 		"jti":       jti,
 		"iat":       now.Unix(),
 		"exp":       expiresAt.Unix(),
-		"iss":       m.config.Issuer,
-		"aud":       m.config.Audience,
+		"iss":       m.Config.Issuer,
+		"aud":       m.Config.Audience,
 		"tenant_id": tenantID,
 		"app_id":    appID,
 	}
 
 	// Add custom claims
-	for k, v := range claims {
-		jwtClaims[k] = v
-	}
+	maps.Copy(jwtClaims, claims)
 
 	// Create token
-	jwtToken := jwt.NewWithClaims(m.config.SigningMethod, jwtClaims)
+	jwtToken := jwt.NewWithClaims(m.Config.SigningMethod, jwtClaims)
 
 	// Sign token
-	tokenString, err := jwtToken.SignedString(m.config.SigningKey)
+	tokenString, err := jwtToken.SignedString(m.Config.SigningKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign token: %w", err)
 	}
@@ -140,7 +83,7 @@ func (m *Manager) Generate(ctx context.Context, claims token.Claims) (*token.Tok
 		ExpiresAt: expiresAt,
 		IssuedAt:  now,
 		Metadata: map[string]any{
-			"algorithm": m.config.SigningMethod.Alg(),
+			"algorithm": m.Config.SigningMethod.Alg(),
 		},
 	}, nil
 }
@@ -150,10 +93,10 @@ func (m *Manager) Verify(ctx context.Context, tokenValue string) (*token.Verific
 	// Parse and verify token
 	jwtToken, err := jwt.Parse(tokenValue, func(t *jwt.Token) (any, error) {
 		// Verify signing method
-		if t.Method.Alg() != m.config.SigningMethod.Alg() {
+		if t.Method.Alg() != m.Config.SigningMethod.Alg() {
 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 		}
-		return m.config.VerifyingKey, nil
+		return m.Config.VerifyingKey, nil
 	})
 
 	if err != nil {
@@ -185,10 +128,10 @@ func (m *Manager) Verify(ctx context.Context, tokenValue string) (*token.Verific
 	}
 
 	// Check revocation using JTI only
-	if m.config.EnableRevocation && m.revocationList != nil {
+	if m.Config.EnableRevocation && m.RevocationList != nil {
 		// Get JTI (JWT ID) from claims - all tokens now have JTI
 		if jti, ok := jwtClaims["jti"].(string); ok && jti != "" {
-			revoked, err := m.revocationList.IsRevoked(ctx, jti)
+			revoked, err := m.RevocationList.IsRevoked(ctx, jti)
 			if err == nil && revoked {
 				return &token.VerificationResult{
 					Valid: false,
@@ -199,9 +142,9 @@ func (m *Manager) Verify(ctx context.Context, tokenValue string) (*token.Verific
 	}
 
 	// Verify issuer
-	if m.config.Issuer != "" {
+	if m.Config.Issuer != "" {
 		iss, err := jwtClaims.GetIssuer()
-		if err != nil || iss != m.config.Issuer {
+		if err != nil || iss != m.Config.Issuer {
 			return &token.VerificationResult{
 				Valid: false,
 				Error: fmt.Errorf("invalid issuer"),
@@ -251,7 +194,7 @@ func (m *Manager) Type() string {
 // GenerateRefreshToken generates a refresh token
 func (m *Manager) GenerateRefreshToken(ctx context.Context, claims token.Claims) (*token.Token, error) {
 	now := time.Now()
-	expiresAt := now.Add(m.config.RefreshTokenDuration)
+	expiresAt := now.Add(m.Config.RefreshTokenDuration)
 
 	// Validate required multi-tenant claims
 	tenantID, hasTenant := claims.GetTenantID()
@@ -275,8 +218,8 @@ func (m *Manager) GenerateRefreshToken(ctx context.Context, claims token.Claims)
 		"jti":       jti,
 		"iat":       now.Unix(),
 		"exp":       expiresAt.Unix(),
-		"iss":       m.config.Issuer,
-		"aud":       m.config.Audience,
+		"iss":       m.Config.Issuer,
+		"aud":       m.Config.Audience,
 		"type":      "refresh",
 		"tenant_id": tenantID,
 		"app_id":    appID,
@@ -288,10 +231,10 @@ func (m *Manager) GenerateRefreshToken(ctx context.Context, claims token.Claims)
 	}
 
 	// Create token
-	jwtToken := jwt.NewWithClaims(m.config.SigningMethod, jwtClaims)
+	jwtToken := jwt.NewWithClaims(m.Config.SigningMethod, jwtClaims)
 
 	// Sign token
-	tokenString, err := jwtToken.SignedString(m.config.SigningKey)
+	tokenString, err := jwtToken.SignedString(m.Config.SigningKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign refresh token: %w", err)
 	}
@@ -304,7 +247,7 @@ func (m *Manager) GenerateRefreshToken(ctx context.Context, claims token.Claims)
 		ExpiresAt: expiresAt,
 		IssuedAt:  now,
 		Metadata: map[string]any{
-			"algorithm": m.config.SigningMethod.Alg(),
+			"algorithm": m.Config.SigningMethod.Alg(),
 			"type":      "refresh",
 		},
 	}, nil
@@ -312,13 +255,13 @@ func (m *Manager) GenerateRefreshToken(ctx context.Context, claims token.Claims)
 
 // Revoke revokes a token by adding it to the revocation list
 func (m *Manager) Revoke(ctx context.Context, tokenValue string) error {
-	if !m.config.EnableRevocation || m.revocationList == nil {
+	if !m.Config.EnableRevocation || m.RevocationList == nil {
 		return errors.New("revocation not enabled")
 	}
 
 	// Parse token to get JTI and expiry
 	jwtToken, err := jwt.Parse(tokenValue, func(t *jwt.Token) (any, error) {
-		return m.config.VerifyingKey, nil
+		return m.Config.VerifyingKey, nil
 	})
 
 	if err != nil {
@@ -342,7 +285,7 @@ func (m *Manager) Revoke(ctx context.Context, tokenValue string) error {
 		return err
 	}
 
-	return m.revocationList.Add(ctx, jti, exp.Time)
+	return m.RevocationList.Add(ctx, jti, exp.Time)
 }
 
 // Refresh generates a new access token from a refresh token
@@ -367,43 +310,6 @@ func (m *Manager) Refresh(ctx context.Context, refreshToken string) (*token.Toke
 	return m.Generate(ctx, result.Claims)
 }
 
-// InMemoryRevocationList is an in-memory implementation of TokenRevocationList
-type InMemoryRevocationList struct {
-	revoked map[string]time.Time
-}
-
-// NewInMemoryRevocationList creates a new in-memory revocation list
-func NewInMemoryRevocationList() *InMemoryRevocationList {
-	return &InMemoryRevocationList{
-		revoked: make(map[string]time.Time),
-	}
-}
-
-func (r *InMemoryRevocationList) Add(ctx context.Context, tokenID string, expiresAt time.Time) error {
-	r.revoked[tokenID] = expiresAt
-	return nil
-}
-
-func (r *InMemoryRevocationList) IsRevoked(ctx context.Context, tokenID string) (bool, error) {
-	_, revoked := r.revoked[tokenID]
-	return revoked, nil
-}
-
-func (r *InMemoryRevocationList) Remove(ctx context.Context, tokenID string) error {
-	delete(r.revoked, tokenID)
-	return nil
-}
-
-func (r *InMemoryRevocationList) Cleanup(ctx context.Context) error {
-	now := time.Now()
-	for tokenID, expiresAt := range r.revoked {
-		if now.After(expiresAt) {
-			delete(r.revoked, tokenID)
-		}
-	}
-	return nil
-}
-
 // generateJTI generates a unique JWT ID using cryptographic random bytes
 func generateJTI() (string, error) {
 	b := make([]byte, 16) // 128-bit random ID
@@ -411,4 +317,25 @@ func generateJTI() (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(b), nil
+}
+
+// GenerateResetToken generates a one-time password reset token for email
+func (m *Manager) GenerateResetToken(ctx context.Context, email string) (string, error) {
+	// Generate a secure random token (32 bytes = 256 bits)
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return "", fmt.Errorf("failed to generate reset token: %w", err)
+	}
+
+	// Encode as hex string
+	resetToken := hex.EncodeToString(tokenBytes)
+
+	// TODO: Store the reset token with email and expiration time in a store
+	// For now, just return the token
+	// In production, you should:
+	// 1. Hash the token before storing
+	// 2. Store with email and expiration (e.g., 1 hour)
+	// 3. Implement verification logic
+
+	return resetToken, nil
 }

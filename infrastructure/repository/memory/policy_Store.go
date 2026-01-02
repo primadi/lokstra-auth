@@ -17,9 +17,8 @@ type InMemoryStore struct {
 
 var _ authz.PolicyStore = (*InMemoryStore)(nil)
 
-func (s *InMemoryStore) Init() error {
+func (s *InMemoryStore) Init() {
 	s.policies = make(map[string]*authz.Policy)
-	return nil
 }
 
 // Create creates a new policy
