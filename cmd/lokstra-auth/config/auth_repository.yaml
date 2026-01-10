@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://primadi.github.io/lokstra/schema/lokstra.schema.json
+
+configs:
+  migration-db: db_main         # use db_main for running migrations
+  email-service: email_smtp     # use email_smtp for email service
+
+  auth:
+    path-prefix: /auth
+    db_auth: db_main
+    token-manager: jwt-token-manager
+    event-bus: map-event-bus
+    jwt_token_manager:
+      signing_method: ${JWT_SIGNING_METHOD:HS256}
+      signing_key: ${JWT_SIGNING_KEY:supersecretkeyyoushouldchange}
+      verifying_key: ${JWT_VERIFYING_KEY:supersecretkeyyoushouldchange}
+      issuer: ${JWT_ISSUER:lokstra-auth}
+      audience: ${JWT_AUDIENCE:lokstra-clients}
+      access_token_duration: ${JWT_ACCESS_TOKEN_DURATION:15m}
+      refresh_token_duration: ${JWT_REFRESH_TOKEN_DURATION:168h} # 7 days
+    simple_token_manager:
+      token_length: ${SIMPLE_TOKEN_LENGTH:32}
+      token_duration: ${SIMPLE_TOKEN_DURATION:24h}
+
+    #stores:
+    app-key-store: pg-app-key-store
+    app-store: pg-app-store
+    branch-store: pg-branch-store
+    credential-store: pg-credential-store
+    permission-composition-store: pg-permission-composition-store
+    permission-store: pg-permission-store
+    policy-store: pg-policy-store
+    refresh-token-store: pg-refresh-token-store
+    role-permission-store: pg-role-permission-store
+    role-store: pg-role-store
+    session-store: pg-session-store
+    tenant-store: pg-tenant-store
+    user-app-store: pg-user-app-store
+    user-identity-store: pg-user-identity-store
+    user-permission-store: pg-user-permission-store
+    user-role-store: pg-user-role-store
+    user-store: pg-user-store
+
+service-definitions:
+  db_main:
+    type: dbpool_pg
+    config:
+      dsn: ${DB_AUTH_DSN:postgres://postgres:adm1n@localhost:5432/lokstra_db}
+      schema: ${DB_AUTH_SCHEMA:lokstra_auth}
+    

@@ -1,0 +1,261 @@
+### Variables
+@baseUrl = http://localhost:8080
+@pathPrefix = /auth
+@tenantId = tenant-001
+@tenantId2 = tenant-002
+
+### 1. Create Tenant (with welcome email)
+POST {{baseUrl}}{{pathPrefix}}/tenants
+Content-Type: application/json
+
+{
+  "id": "{{tenantId}}",
+  "name": "Acme Corporation",
+  "owner_email": "owner@acme.com",
+  "owner_username": "acme_owner",
+  "owner_full_name": "John Doe",
+  "db_dsn": "postgres://postgres:adm1n@localhost:5432/lokstra_db",
+  "db_schema": "data01",
+  "send_welcome_email": true,
+  "settings": {
+    "allow_registration": true,
+    "require_email_verification": true
+  },
+  "metadata": {
+    "industry": "Technology",
+    "size": "enterprise"
+  }
+}
+
+### 2. Create Another Tenant (without welcome email)
+POST {{baseUrl}}{{pathPrefix}}/tenants
+Content-Type: application/json
+
+{
+  "id": "{{tenantId2}}",
+  "name": "Tech Startup Inc",
+  "owner_email": "admin@techstartup.com",
+  "owner_full_name": "Jane Smith",
+  "db_dsn": "postgres://postgres:adm1n@localhost:5432/lokstra_db",
+  "db_schema": "data01",
+  "send_welcome_email": false
+}
+
+### 3. Get Tenant by ID
+GET {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId}}
+
+### 4. List All Tenants
+GET {{baseUrl}}{{pathPrefix}}/tenants
+
+### 5. Update Tenant (basic fields)
+PUT {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId}}
+Content-Type: application/json
+
+{
+  "id": "{{tenantId}}",
+  "name": "Acme Corporation (Updated)",
+  "settings": {
+    "allow_registration": false,
+    "require_email_verification": true,
+    "max_users": 1000
+  },
+  "metadata": {
+    "industry": "Technology",
+    "size": "enterprise",
+    "updated_at": "2026-01-06"
+  }
+}
+
+### 6. Update Tenant Config (credentials & token)
+PUT {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId}}
+Content-Type: application/json
+
+{
+  "id": "{{tenantId}}",
+  "config": {
+    "default_credentials": {
+      "password_min_length": 12,
+      "password_require_uppercase": true,
+      "password_require_lowercase": true,
+      "password_require_number": true,
+      "password_require_special": true,
+      "password_max_age_days": 90,
+      "enable_mfa": true,
+      "mfa_methods": ["totp", "sms"]
+    },
+    "default_token_config": {
+      "access_token_ttl": 900,
+      "refresh_token_ttl": 604800,
+      "token_type": "jwt",
+      "signing_algorithm": "HS256"
+    }
+  }
+}
+
+### 7. Update Tenant Security Config
+PUT {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId}}
+Content-Type: application/json
+
+{
+  "id": "{{tenantId}}",
+  "config": {
+    "security": {
+      "enable_refresh_token_rotation": true,
+      "refresh_token_rotation_grace_period": 30,
+      "max_concurrent_sessions": 3,
+      "session_revocation_policy": "oldest",
+      "enable_ip_whitelist": false,
+      "allowed_ip_addresses": [],
+      "enable_rate_limiting": true,
+      "max_login_attempts": 5,
+      "lockout_duration": 900
+    }
+  }
+}
+
+### 8. Update Tenant - Complete Config
+PUT {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId}}
+Content-Type: application/json
+
+{
+  "id": "{{tenantId}}",
+  "name": "Acme Corporation Pro",
+  "db_dsn": "postgres://user:pass@localhost:5432/acme_db_v2",
+  "db_schema": "acme_v2",
+  "settings": {
+    "allow_registration": true,
+    "require_email_verification": true,
+    "max_users": 5000
+  },
+  "config": {
+    "default_credentials": {
+      "password_min_length": 10,
+      "password_require_uppercase": true,
+      "password_require_lowercase": true,
+      "password_require_number": true,
+      "password_require_special": false,
+      "password_max_age_days": 60,
+      "enable_mfa": false
+    },
+    "default_token_config": {
+      "access_token_ttl": 1800,
+      "refresh_token_ttl": 2592000,
+      "token_type": "jwt",
+      "signing_algorithm": "HS256"
+    },
+    "security": {
+      "enable_refresh_token_rotation": true,
+      "refresh_token_rotation_grace_period": 60,
+      "max_concurrent_sessions": 5,
+      "session_revocation_policy": "reject",
+      "enable_ip_whitelist": false,
+      "enable_rate_limiting": true,
+      "max_login_attempts": 3,
+      "lockout_duration": 1800
+    }
+  },
+  "metadata": {
+    "industry": "Technology",
+    "size": "enterprise",
+    "tier": "premium",
+    "updated_at": "2026-01-06"
+  }
+}
+
+### 9. Activate Tenant
+POST {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId}}/activate
+
+### 10. Suspend Tenant
+POST {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId}}/suspend
+
+### 11. Re-activate Tenant
+POST {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId}}/activate
+
+### 12. Delete Tenant
+DELETE {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId2}}
+
+### 13. Try to Get Deleted Tenant (should fail)
+GET {{baseUrl}}{{pathPrefix}}/tenants/{{tenantId2}}
+
+### 14. Create Tenant with Minimal Info (auto-generate username)
+POST {{baseUrl}}{{pathPrefix}}/tenants
+Content-Type: application/json
+
+{
+  "id": "tenant-minimal",
+  "name": "Minimal Tenant",
+  "owner_email": "test@minimal.com",
+  "send_welcome_email": false
+}
+
+### 15. Create Tenant with Security Config from Start
+POST {{baseUrl}}{{pathPrefix}}/tenants
+Content-Type: application/json
+
+{
+  "id": "tenant-secure",
+  "name": "Secure Tenant",
+  "owner_email": "admin@secure.com",
+  "owner_username": "secure_admin",
+  "owner_full_name": "Security Admin",
+  "db_dsn": "postgres://user:pass@localhost:5432/secure_db",
+  "db_schema": "secure",
+  "send_welcome_email": false,
+  "config": {
+    "default_credentials": {
+      "password_min_length": 16,
+      "password_require_uppercase": true,
+      "password_require_lowercase": true,
+      "password_require_number": true,
+      "password_require_special": true,
+      "password_max_age_days": 30,
+      "enable_mfa": true,
+      "mfa_methods": ["totp", "webauthn"]
+    },
+    "security": {
+      "enable_refresh_token_rotation": true,
+      "refresh_token_rotation_grace_period": 10,
+      "max_concurrent_sessions": 1,
+      "session_revocation_policy": "reject",
+      "enable_ip_whitelist": true,
+      "allowed_ip_addresses": ["192.168.1.0/24", "10.0.0.0/8"],
+      "enable_rate_limiting": true,
+      "max_login_attempts": 3,
+      "lockout_duration": 3600
+    }
+  }
+}
+
+### 16. Error Test - Create Tenant with Duplicate ID
+POST {{baseUrl}}{{pathPrefix}}/tenants
+Content-Type: application/json
+
+{
+  "id": "{{tenantId}}",
+  "name": "Duplicate Tenant",
+  "owner_email": "duplicate@test.com"
+}
+
+### 17. Error Test - Create Tenant without Owner Email
+POST {{baseUrl}}{{pathPrefix}}/tenants
+Content-Type: application/json
+
+{
+  "id": "tenant-no-email",
+  "name": "No Email Tenant"
+}
+
+### 18. Error Test - Update Non-existent Tenant
+PUT {{baseUrl}}{{pathPrefix}}/tenants/non-existent-tenant-id
+Content-Type: application/json
+
+{
+  "id": "non-existent-tenant-id",
+  "name": "Ghost Tenant"
+}
+
+### 19. Error Test - Delete Non-existent Tenant
+DELETE {{baseUrl}}{{pathPrefix}}/tenants/non-existent-tenant-id
+
+### 20. Error Test - Get Non-existent Tenant
+GET {{baseUrl}}{{pathPrefix}}/tenants/non-existent-tenant-id

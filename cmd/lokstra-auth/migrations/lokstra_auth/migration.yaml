@@ -1,0 +1,4 @@
+dbpool-name: "@migration-db"
+schema-table: schema_migrations
+force: auto
+description: Lokstra Auth Service Migrations

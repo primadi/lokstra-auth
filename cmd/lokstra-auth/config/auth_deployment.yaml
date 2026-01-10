@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://primadi.github.io/lokstra/schema/lokstra.schema.json
+
+servers:
+  auth-server:
+    base-url: ${AUTH_SERVER_BASE_URL:http://localhost}
+    apps:
+      - addr: :8080
+        published-services:
+          - tenant-service
+      - addr: :8081
+        published-services:
+          - user-service

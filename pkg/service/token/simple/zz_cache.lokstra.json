@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "files": {
+    "manager.go": {
+      "filename": "manager.go",
+      "checksum": "2aa852ac356f527a2bddb9a7c8c163d423f5d2b86490d5493d9769f4a6bbd462",
+      "annotations": 2,
+      "last_scan": "2026-01-11T03:57:04.1079511+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2026-01-11T03:57:04.1079511+07:00"
+    }
+  },
+  "updated_at": "2026-01-11T03:57:04.1079511+07:00",
+  "generated_checksum": "0b831ee57a573d79bf6e14d1a51020ddf045d08656ae40b91035b9ecd4b4f766"
+}

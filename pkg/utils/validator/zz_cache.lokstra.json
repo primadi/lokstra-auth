@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "files": {
+    "configurable.go": {
+      "filename": "configurable.go",
+      "checksum": "1a1e9cd240f03c5f8191e06dd551f2e6c4236c5ed8fb1faa039d1c3e6cbb9138",
+      "annotations": 1,
+      "last_scan": "2026-01-11T03:43:53.898452+07:00",
+      "generated": [
+        "zz_generated.lokstra.go"
+      ],
+      "generated_mod_time": "2026-01-11T03:43:53.898452+07:00"
+    }
+  },
+  "updated_at": "2026-01-11T03:57:04.061715+07:00",
+  "generated_checksum": "176fc6f1017c9945b9339f635cf7fc462fbd82a6fca014d7893da47bdcc873eb"
+}
